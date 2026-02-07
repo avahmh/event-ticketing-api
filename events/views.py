@@ -1,3 +1,8 @@
-from django.shortcuts import render
+from django.http import JsonResponse
+from tickets.models import Order
+from events.models import Event
 
-# Create your views here.
+
+def list_events(request):
+    events = Event.objects.all().values("id", "title", "starts_at")
+    return JsonResponse(list(events), safe=False)

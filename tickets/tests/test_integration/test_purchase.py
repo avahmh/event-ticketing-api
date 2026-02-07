@@ -38,7 +38,7 @@ class ConcurrentInventorySafetyTest(TransactionTestCase):
             HTTP_IDEMPOTENCY_KEY=str(uuid.uuid4())
 
         )
-        connection.close()  # 🔥 خیلی مهم
+        connection.close()  
 
     def test_concurrent_purchase_does_not_oversell(self):
 
@@ -51,7 +51,7 @@ class ConcurrentInventorySafetyTest(TransactionTestCase):
         t1.join()
         t2.join()
 
-        # 🚨 اینا عمداً FAIL می‌شن
+        #  اینا عمداً FAIL می‌ش
         print("orders:", Order.objects.count())
         print(
             "available:",
