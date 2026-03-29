@@ -7,6 +7,8 @@ __pycache__/
 venv/
 .env/
 .env
+.env.*
+!.env.example
 
 # IDEs
 .idea/
@@ -14,3 +16,18 @@ venv/
 
 # OS files
 .DS_Store
+
+# Local AI export tooling and generated dumps
+code2prompt.py
+project_files.txt
+project_structure.txt
+chatgpt_export.txt
+
+# Local Docker variants (use committed *.example.yml — copy to docker-compose.yml locally)
+docker-compose.yml
+docker-compose1.yml
+Dockerfile
+
+# Celery / runtime
+celerybeat-schedule
+celerybeat-schedule.*

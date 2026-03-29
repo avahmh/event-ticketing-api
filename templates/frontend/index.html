@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Ticketing</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 0 auto; padding: 1.25rem; color: #0f172a; }
+        h1, h2, h3 { margin: 0 0 0.75rem 0; }
+        section { margin-bottom: 1.5rem; }
+        .card { border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; padding: 1rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .event { border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; }
+        .meta { color: #475569; font-size: 0.92rem; }
+        .available { font-weight: 600; color: #166534; }
+        form { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; }
+        label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.92rem; }
+        select, input, button { padding: 0.5rem 0.72rem; font-size: 0.95rem; border-radius: 6px; }
+        select, input { border: 1px solid #cbd5e1; }
+        button { cursor: pointer; border: none; background: #2563eb; color: #fff; }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        .cancel { background: #dc2626; }
+        .cancel:hover { background: #b91c1c; }
+        .msg { margin-top: 0.5rem; padding: 0.5rem; border-radius: 6px; font-size: 0.92rem; }
+        .ok { background: #f0fdf4; color: #166534; }
+        .err { background: #fef2f2; color: #b91c1c; }
+        .loading { color: #64748b; }
+        .orders table { width: 100%; border-collapse: collapse; }
+        .orders th, .orders td { text-align: left; padding: 0.45rem; border-bottom: 1px solid #e2e8f0; font-size: 0.92rem; }
+        .status { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.8rem; }
+        .status.confirmed { background: #dcfce7; color: #166534; }
+        .status.cancelled { background: #fee2e2; color: #b91c1c; }
+        .status.reserved { background: #fef3c7; color: #92400e; }
+        .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem; font-size: 0.88rem; }
+        .chip { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 0.35rem; vertical-align: middle; }
+        .chip.available { background: #f59e0b; }
+        .chip.selected { background: #2563eb; }
+        .chip.reserved { background: #ef4444; }
+        .chip.sold { background: #64748b; }
+        .seatmap-wrap { border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; padding: 0.8rem; }
+        .seatmap-toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.6rem; }
+        .seatmap-zones { display: grid; gap: 0.75rem; }
+        .zone { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.6rem; }
+        .zone h4 { margin: 0 0 0.5rem 0; font-size: 0.95rem; }
+        .sections { display: grid; gap: 0.6rem; }
+        .section { border: 1px dashed #cbd5e1; border-radius: 7px; padding: 0.5rem; background: #f8fafc; }
+        .section-title { font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; }
+        .seat-grid { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(16px, 16px)); align-content: start; }
+        .seat { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #b45309; background: #f59e0b; cursor: pointer; }
+        .seat.selected { background: #2563eb; border-color: #1e40af; }
+        .seat.reserved { background: #ef4444; border-color: #b91c1c; cursor: not-allowed; }
+        .seat.sold { background: #64748b; border-color: #334155; cursor: not-allowed; }
+        .seat.unavailable { background: #94a3b8; border-color: #475569; cursor: not-allowed; }
+        .seatmap-empty { color: #64748b; }
+        .hidden { display: none; }
+        .teatr-map { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; padding: 0.7rem; }
+        .teatr-top { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 0.5rem; margin-bottom: 0.6rem; }
+        .teatr-box { text-align: center; color: #fff; font-size: 0.75rem; padding: 0.35rem 0.25rem; border-radius: 4px; }
+        .teatr-box.exit { background: #b91c1c; }
+        .teatr-box.toilet { background: #e5e7eb; color: #111827; }
+        .teatr-main { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 0.6rem; align-items: start; }
+        .teatr-side { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.4rem; }
+        .teatr-side h5 { margin: 0 0 0.3rem 0; text-align: center; color: #334155; font-size: 0.78rem; }
+        .teatr-center { display: grid; gap: 0.45rem; }
+        .teatr-standing { background: #84cc16; border-radius: 4px; min-height: 170px; display: grid; place-items: center; color: #14532d; font-weight: 600; font-size: 0.78rem; }
+        .teatr-drinks { background: #d946ef; color: #fff; border-radius: 4px; min-height: 170px; display: grid; place-items: center; font-size: 0.78rem; }
+        .teatr-center-grid { display: grid; grid-template-columns: 36px 1fr 36px; gap: 0.2rem; }
+        .teatr-fanpit { background: #ef4444; color: #fff; border-radius: 4px; min-height: 60px; display: grid; place-items: center; font-size: 0.8rem; }
+        .teatr-stage { background: #2563eb; color: #fff; border-radius: 4px; min-height: 48px; display: grid; place-items: center; font-size: 0.82rem; font-weight: 600; }
+        .teatr-vip-row { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 0.6rem; margin-top: 0.45rem; }
+        .seat-row { display: flex; gap: 4px; flex-wrap: nowrap; margin-bottom: 4px; }
+        .seat-row.center { justify-content: center; }
+        .vip-label { font-size: 0.74rem; color: #334155; margin-bottom: 0.2rem; text-align: center; }
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .teatr-main { grid-template-columns: 1fr; }
+            .teatr-vip-row { grid-template-columns: 1fr; }
+            .teatr-center-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Event Ticketing</h1>
+
+    <section class="card">
+        <h2>Events</h2>
+        <div id="events-list" class="loading">Loading events...</div>
+    </section>
+
+    <section class="card grid-2">
+        <div>
+            <h2>General Admission Order</h2>
+            <form id="order-form">
+                <label>
+                    Event
+                    <select id="order-event" required></select>
+                </label>
+                <label>
+                    Quantity
+                    <input type="number" id="order-qty" min="1" value="1" required>
+                </label>
+                <button type="submit" id="order-btn">Place order</button>
+            </form>
+            <div id="order-msg"></div>
+        </div>
+
+        <div>
+            <h2>Reserved Seating</h2>
+            <div class="seatmap-wrap">
+                <div class="seatmap-toolbar">
+                    <label>
+                        Event
+                        <select id="seat-event"></select>
+                    </label>
+                    <button type="button" id="refresh-seatmap">Refresh map</button>
+                    <span id="seatmap-hall" class="meta"></span>
+                </div>
+                <div class="legend">
+                    <span><span class="chip available"></span>Available</span>
+                    <span><span class="chip selected"></span>Selected</span>
+                    <span><span class="chip reserved"></span>Reserved</span>
+                    <span><span class="chip sold"></span>Sold</span>
+                </div>
+                <div id="seatmap" class="seatmap-empty">Select a reserved-seating event</div>
+                <div style="margin-top: 0.6rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <button type="button" id="reserve-btn">Reserve selected seats</button>
+                    <button type="button" id="confirm-btn">Confirm reservation</button>
+                    <span id="seat-selection" class="meta">0 selected</span>
+                </div>
+                <div id="reservation-msg"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Orders for selected event</h2>
+        <div id="orders-list" class="loading">Select an event</div>
+    </section>
+
+    <script>
+        const API = "";
+        const state = {
+            events: [],
+            selectedSeatIds: new Set(),
+            seatEventId: null,
+            reservationId: null
+        };
+
+        function getEvents() {
+            return fetch(API + "/events/").then(r => r.json());
+        }
+
+        function getSeatmap(eventId) {
+            return fetch(API + "/events/" + eventId + "/seatmap/").then(r => r.json().then(data => ({ ok: r.ok, data })));
+        }
+
+        function reserveSeats(eventId, seatIds, key) {
+            return fetch(API + "/events/" + eventId + "/reservations/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Idempotency-Key": key },
+                body: JSON.stringify({ seat_ids: seatIds })
+            }).then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })));
+        }
+
+        function confirmReservation(eventId, reservationId, key) {
+            return fetch(API + "/events/" + eventId + "/reservations/confirm/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Idempotency-Key": key },
+                body: JSON.stringify({ reservation_id: reservationId })
+            }).then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })));
+        }
+
+        function placeOrder(eventId, quantity, idempotencyKey) {
+            const body = new URLSearchParams({ quantity: String(quantity) });
+            return fetch(API + "/events/" + eventId + "/tickets/", {
+                method: "POST",
+                headers: { "Idempotency-Key": idempotencyKey, "Content-Type": "application/x-www-form-urlencoded" },
+                body
+            }).then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })));
+        }
+
+        function getOrders(eventId) {
+            return fetch(API + "/events/" + eventId + "/orders/?page_size=50").then(r => r.json());
+        }
+
+        function cancelOrder(orderId) {
+            return fetch(API + "/orders/" + orderId + "/cancel/", { method: "PATCH" }).then(r => r.json());
+        }
+        function payOrder(orderId, status) {
+            return fetch(API + "/orders/" + orderId + "/pay/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: status || "success" })
+            }).then(r => r.json().then(data => ({ ok: r.ok, data })));
+        }
+
+        function statusClass(s) {
+            if (s === "reserved") return "reserved";
+            if (s === "sold") return "sold";
+            if (s === "available") return "";
+            return "unavailable";
+        }
+
+        function eventLabel(e) {
+            if (e.is_reserved_seating) return e.title + " (reserved seating)";
+            return e.title + " (" + (e.available || 0) + " left)";
+        }
+
+        function renderEvents(events) {
+            const el = document.getElementById("events-list");
+            if (!events.length) {
+                el.textContent = "No events.";
+                return;
+            }
+            el.innerHTML = events.map(e => `<div class="event">
+                <h3>${e.title}</h3>
+                <div class="meta">Starts: ${e.starts_at ? new Date(e.starts_at).toLocaleString() : "-"}</div>
+                <div class="meta">Type: ${e.is_reserved_seating ? "Reserved seating" : "General admission"}</div>
+                <div class="available">${e.available || 0} / ${e.total || 0} tickets available</div>
+            </div>`).join("");
+        }
+
+        function fillEventSelects(events) {
+            const orderSel = document.getElementById("order-event");
+            const seatSel = document.getElementById("seat-event");
+
+            orderSel.innerHTML = "<option value=''>Select event</option>" + events.filter(e => !e.is_reserved_seating).map(e =>
+                `<option value="${e.id}">${eventLabel(e)}</option>`
+            ).join("");
+
+            const reserved = events.filter(e => e.is_reserved_seating);
+            seatSel.innerHTML = "<option value=''>Select reserved event</option>" + reserved.map(e =>
+                `<option value="${e.id}">${eventLabel(e)}</option>`
+            ).join("");
+
+            orderSel.onchange = onEventSelect;
+            seatSel.onchange = onSeatEventSelect;
+        }
+
+        function renderOrders(orders) {
+            const msg = document.getElementById("orders-list");
+            if (!orders.length) {
+                msg.textContent = "No orders for this event.";
+                return;
+            }
+            msg.innerHTML = `<table class="orders"><thead><tr><th>ID</th><th>Qty</th><th>Status</th><th></th></tr></thead><tbody>
+                ${orders.map(o => `<tr><td>${o.id}</td><td>${o.quantity}</td><td><span class="status ${o.status}">${o.status}</span></td><td>${
+                    o.status === "confirmed"
+                        ? `<button type="button" class="cancel" data-order-id="${o.id}">Cancel</button>`
+                        : (o.status === "reserved" ? `<button type="button" class="pay" data-order-id="${o.id}">Pay</button>` : "")
+                }</td></tr>`).join("")}
+            </tbody></table>`;
+            msg.querySelectorAll("button.cancel").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const oid = btn.getAttribute("data-order-id");
+                    cancelOrder(oid).then(() => onEventSelect());
+                });
+            });
+            msg.querySelectorAll("button.pay").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const oid = btn.getAttribute("data-order-id");
+                    payOrder(oid, "success").then(() => {
+                        onEventSelect();
+                        onSeatEventSelect();
+                        loadEvents();
+                    });
+                });
+            });
+        }
+
+        function onEventSelect() {
+            const id = document.getElementById("order-event").value;
+            const msg = document.getElementById("orders-list");
+            if (!id) {
+                msg.textContent = "Select an event";
+                return;
+            }
+            msg.textContent = "Loading...";
+            getOrders(id).then(data => renderOrders(data.orders || [])).catch(() => {
+                msg.textContent = "Failed to load orders.";
+            });
+        }
+
+        function renderSeatmap(data) {
+            const el = document.getElementById("seatmap");
+            const hallEl = document.getElementById("seatmap-hall");
+            hallEl.textContent = data.hall ? ("Hall: " + data.hall.name) : "";
+            state.selectedSeatIds = new Set();
+            updateSeatSelectionLabel();
+
+            if (!data.zones || !data.zones.length) {
+                el.textContent = "No zones found for this hall.";
+                return;
+            }
+
+            if (data.hall && data.hall.name && data.hall.name.toLowerCase().includes("teatrshahr")) {
+                renderTeatrShahrSeatmap(data, el);
+                return;
+            }
+
+            el.innerHTML = '<div class="seatmap-zones"></div>';
+            const zonesRoot = el.querySelector(".seatmap-zones");
+
+            data.zones.forEach(zone => {
+                const zoneEl = document.createElement("div");
+                zoneEl.className = "zone";
+                zoneEl.innerHTML = `<h4>${zone.name}</h4><div class="sections"></div>`;
+                const sectionsEl = zoneEl.querySelector(".sections");
+
+                zone.sections.forEach(section => {
+                    const sec = document.createElement("div");
+                    sec.className = "section";
+                    sec.innerHTML = `<div class="section-title">Section: ${section.name}</div><div class="seat-grid"></div>`;
+                    const grid = sec.querySelector(".seat-grid");
+
+                    section.seats.forEach(seat => {
+                        const btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.className = "seat " + statusClass(seat.status);
+                        btn.title = seat.label + (seat.price !== null ? (" - " + seat.price) : "");
+                        btn.dataset.seatId = String(seat.id);
+
+                        const selectable = seat.status === "available";
+                        if (!selectable) {
+                            btn.disabled = true;
+                        }
+
+                        btn.addEventListener("click", () => {
+                            const sid = seat.id;
+                            if (state.selectedSeatIds.has(sid)) {
+                                state.selectedSeatIds.delete(sid);
+                                btn.classList.remove("selected");
+                            } else {
+                                state.selectedSeatIds.add(sid);
+                                btn.classList.add("selected");
+                            }
+                            updateSeatSelectionLabel();
+                        });
+
+                        grid.appendChild(btn);
+                    });
+
+                    sectionsEl.appendChild(sec);
+                });
+
+                zonesRoot.appendChild(zoneEl);
+            });
+        }
+
+        function createSeatBtn(seat) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "seat " + statusClass(seat.status);
+            btn.title = seat.label + (seat.price !== null ? (" - " + seat.price) : "");
+            btn.dataset.seatId = String(seat.id);
+            if (seat.status !== "available") {
+                btn.disabled = true;
+            }
+            btn.addEventListener("click", () => {
+                const sid = seat.id;
+                if (state.selectedSeatIds.has(sid)) {
+                    state.selectedSeatIds.delete(sid);
+                    btn.classList.remove("selected");
+                } else {
+                    state.selectedSeatIds.add(sid);
+                    btn.classList.add("selected");
+                }
+                updateSeatSelectionLabel();
+            });
+            return btn;
+        }
+
+        function groupByRow(seats) {
+            const byRow = {};
+            seats.forEach(s => {
+                if (!byRow[s.row]) byRow[s.row] = [];
+                byRow[s.row].push(s);
+            });
+            return Object.keys(byRow).sort().map(row => byRow[row].sort((a, b) => Number(a.number) - Number(b.number)));
+        }
+
+        function seatsInZone(data, zoneName) {
+            const zone = (data.zones || []).find(z => z.name === zoneName);
+            if (!zone) return [];
+            const all = [];
+            zone.sections.forEach(sec => sec.seats.forEach(s => all.push(s)));
+            return all;
+        }
+
+        function renderRows(container, rows, centered) {
+            rows.forEach(rowSeats => {
+                const rowEl = document.createElement("div");
+                rowEl.className = "seat-row" + (centered ? " center" : "");
+                rowSeats.forEach(seat => rowEl.appendChild(createSeatBtn(seat)));
+                container.appendChild(rowEl);
+            });
+        }
+
+        function renderTeatrShahrSeatmap(data, el) {
+            const leftRows = groupByRow(seatsInZone(data, "Left Block"));
+            const rightRows = groupByRow(seatsInZone(data, "Right Block"));
+            const vipLeftRows = groupByRow(seatsInZone(data, "VIP Left"));
+            const vipRightRows = groupByRow(seatsInZone(data, "VIP Right"));
+
+            el.innerHTML = `<div class="teatr-map">
+                <div class="teatr-top">
+                    <div class="teatr-box exit">Exit 1</div>
+                    <div class="teatr-box toilet">Toilets</div>
+                    <div class="teatr-box exit">Exit 2</div>
+                </div>
+                <div class="teatr-main">
+                    <div class="teatr-side">
+                        <h5>East</h5>
+                        <div id="left-main"></div>
+                    </div>
+                    <div class="teatr-center">
+                        <div class="teatr-center-grid">
+                            <div class="teatr-drinks">Drinks</div>
+                            <div class="teatr-standing">General Admission - Standing</div>
+                            <div class="teatr-drinks">Drinks</div>
+                        </div>
+                        <div class="teatr-fanpit">Fan Pit</div>
+                        <div class="teatr-stage">Stage</div>
+                    </div>
+                    <div class="teatr-side">
+                        <h5>West</h5>
+                        <div id="right-main"></div>
+                    </div>
+                </div>
+                <div class="teatr-vip-row">
+                    <div class="teatr-side">
+                        <div class="vip-label">VIP Area</div>
+                        <div id="left-vip"></div>
+                    </div>
+                    <div></div>
+                    <div class="teatr-side">
+                        <div class="vip-label">VIP Area</div>
+                        <div id="right-vip"></div>
+                    </div>
+                </div>
+            </div>`;
+
+            renderRows(el.querySelector("#left-main"), leftRows, true);
+            renderRows(el.querySelector("#right-main"), rightRows, true);
+            renderRows(el.querySelector("#left-vip"), vipLeftRows, true);
+            renderRows(el.querySelector("#right-vip"), vipRightRows, true);
+        }
+
+        function updateSeatSelectionLabel() {
+            document.getElementById("seat-selection").textContent = state.selectedSeatIds.size + " selected" + (state.reservationId ? (" | reservation #" + state.reservationId) : "");
+        }
+
+        function setReservationMessage(text, ok) {
+            const el = document.getElementById("reservation-msg");
+            el.className = "msg " + (ok ? "ok" : "err");
+            el.textContent = text;
+        }
+
+        function onSeatEventSelect() {
+            const id = document.getElementById("seat-event").value;
+            state.seatEventId = id ? Number(id) : null;
+            const mapEl = document.getElementById("seatmap");
+            if (!state.seatEventId) {
+                mapEl.textContent = "Select a reserved-seating event";
+                document.getElementById("seatmap-hall").textContent = "";
+                return;
+            }
+            mapEl.textContent = "Loading seat map...";
+            getSeatmap(state.seatEventId).then(({ ok, data }) => {
+                if (!ok) {
+                    mapEl.textContent = data.error || "Failed to load seat map.";
+                    return;
+                }
+                renderSeatmap(data);
+            }).catch(() => {
+                mapEl.textContent = "Failed to load seat map.";
+            });
+        }
+
+        document.getElementById("refresh-seatmap").addEventListener("click", onSeatEventSelect);
+
+        document.getElementById("reserve-btn").addEventListener("click", () => {
+            if (!state.seatEventId) {
+                setReservationMessage("Select a reserved event first.", false);
+                return;
+            }
+            const seatIds = Array.from(state.selectedSeatIds);
+            if (!seatIds.length) {
+                setReservationMessage("Select at least one available seat.", false);
+                return;
+            }
+            const key = "res-" + crypto.randomUUID();
+            reserveSeats(state.seatEventId, seatIds, key).then(({ ok, status, data }) => {
+                if (!ok) {
+                    setReservationMessage(data.error || ("Error " + status), false);
+                    return;
+                }
+                state.reservationId = data.reservation_id;
+                updateSeatSelectionLabel();
+                setReservationMessage("Reserved successfully until " + data.reserved_until, true);
+                onSeatEventSelect();
+            }).catch(() => setReservationMessage("Reserve request failed.", false));
+        });
+
+        document.getElementById("confirm-btn").addEventListener("click", () => {
+            if (!state.seatEventId) {
+                setReservationMessage("Select a reserved event first.", false);
+                return;
+            }
+            if (!state.reservationId) {
+                setReservationMessage("Reserve seats first.", false);
+                return;
+            }
+            const key = "cnf-" + crypto.randomUUID();
+            confirmReservation(state.seatEventId, state.reservationId, key).then(({ ok, status, data }) => {
+                if (!ok) {
+                    setReservationMessage(data.error || ("Error " + status), false);
+                    return;
+                }
+                if (data.payment_url) {
+                    window.open(data.payment_url, "_blank");
+                }
+                setReservationMessage("Order #" + data.order_id + " created. Complete payment in fake gateway.", true);
+                state.reservationId = null;
+                state.selectedSeatIds = new Set();
+                updateSeatSelectionLabel();
+                onSeatEventSelect();
+                loadEvents();
+            }).catch(() => setReservationMessage("Confirm request failed.", false));
+        });
+
+        document.getElementById("order-form").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const eventId = document.getElementById("order-event").value;
+            const qty = parseInt(document.getElementById("order-qty").value, 10);
+            const msgEl = document.getElementById("order-msg");
+            const btn = document.getElementById("order-btn");
+            if (!eventId || qty < 1) return;
+            btn.disabled = true;
+            const idem = "ui-" + crypto.randomUUID();
+            placeOrder(eventId, qty, idem).then(({ ok, status, data }) => {
+                btn.disabled = false;
+                msgEl.className = "msg " + (ok ? "ok" : "err");
+                if (ok) {
+                    msgEl.textContent = data.message || ("Order #" + data.order_id + " " + (data.status || ""));
+                    loadEvents().then(onEventSelect);
+                } else {
+                    msgEl.textContent = data.error || ("Error " + status);
+                }
+            }).catch(() => {
+                btn.disabled = false;
+                msgEl.className = "msg err";
+                msgEl.textContent = "Request failed.";
+            });
+        });
+
+        function loadEvents() {
+            return getEvents().then(events => {
+                state.events = events;
+                renderEvents(events);
+                fillEventSelects(events);
+            }).catch(() => {
+                document.getElementById("events-list").textContent = "Failed to load events.";
+            });
+        }
+
+        function handlePaymentRedirectState() {
+            const params = new URLSearchParams(window.location.search);
+            const paid = params.get("paid");
+            const eventId = params.get("event_id");
+            if (paid !== "1" || !eventId) return;
+
+            const seatSelect = document.getElementById("seat-event");
+            const hasOption = Array.from(seatSelect.options).some(o => o.value === String(eventId));
+            if (!hasOption) return;
+
+            seatSelect.value = String(eventId);
+            state.seatEventId = Number(eventId);
+            onSeatEventSelect();
+            setReservationMessage("Payment successful. Seats are now sold.", true);
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, "", cleanUrl);
+        }
+
+        loadEvents().then(() => {
+            handlePaymentRedirectState();
+        });
+    </script>
+</body>
+</html>

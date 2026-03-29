@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+import structlog
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,8 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'events',
-    'tickets'
+    "events",
+    "tickets",
+    "venues",
 ]
 
 MIDDLEWARE = [
@@ -57,7 +60,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -69,6 +72,27 @@ TEMPLATES = [
     },
 ]
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.processors.JSONRenderer(),
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}
+
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
@@ -78,11 +102,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "ticketing",
-        "USER": "ticketing",
-        "PASSWORD": "ticketing",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+        "NAME": os.environ.get("POSTGRES_DB", "ticketing"),
+        "USER": os.environ.get("POSTGRES_USER", "ticketing"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "ticketing"),
+        "HOST": os.environ.get("DATABASE_HOST", "127.0.0.1"),
+        "PORT": os.environ.get("DATABASE_PORT", "5432"),
         "CONN_MAX_AGE": 60,
     }
 }
@@ -121,4 +145,21 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    "expire-reservations": {
+        "task": "tickets.tasks.expire_reservations",
+        "schedule": float(os.environ.get("EXPIRE_RESERVATIONS_INTERVAL_SECONDS", "60")),
+    },
+    "process-outbox": {
+        "task": "tickets.tasks.process_outbox",
+        "schedule": float(os.environ.get("PROCESS_OUTBOX_INTERVAL_SECONDS", "30")),
+    },
+}
