@@ -11,8 +11,9 @@ from django.views.decorators.http import require_http_methods
 from events.models import Event
 from datetime import timedelta
 from django.utils import timezone
-from .models import TicketInventory, Order, OutboxEvent
+from .models import TicketInventory, Order, OutboxEvent, Payment
 from . import services
+from .payments.service import start_payment, finalize_payment, fake_payment_url
 import structlog
 import logging
 import time
@@ -309,7 +310,12 @@ def confirm_reservation(request, event_id):
     )
     if err:
         return JsonResponse({"error": err}, status=400)
-    payment_url = request.build_absolute_uri(f"/payments/fake/{order.id}/")
+    payment = start_payment(
+        order=order,
+        provider=Payment.PROVIDER_FAKE,
+        idempotency_key=order.idempotency_key,
+    )
+    payment_url = request.build_absolute_uri(fake_payment_url(payment.authority))
     return JsonResponse({
         "order_id": order.id,
         "status": order.status,
@@ -318,7 +324,18 @@ def confirm_reservation(request, event_id):
     }, status=201)
 
 
-def fake_payment_page(request, order_id):
+def fake_payment_page(request, authority):
+    payment = (
+        Payment.objects.select_related("order", "order__event")
+        .filter(authority=authority)
+        .first()
+    )
+    if not payment:
+        return JsonResponse({"error": "Payment not found"}, status=404)
+
+    order_id = payment.order_id
+    event_id = payment.order.event_id
+
     html = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><title>Fake Payment</title></head>
@@ -332,29 +349,61 @@ def fake_payment_page(request, order_id):
 <pre id="out" style="margin-top:1rem;background:#f3f4f6;padding:0.75rem;border-radius:6px;"></pre>
 <script>
 async function pay(status) {{
-  const r = await fetch('/orders/{order_id}/pay/', {{
-    method:'POST',
-    headers: {{'Content-Type':'application/json'}},
-    body: JSON.stringify({{status}})
-  }});
-  const data = await r.json();
-  document.getElementById('out').textContent = JSON.stringify(data, null, 2);
-  if (status === 'success' && r.ok) {{
-    const redirectUrl = '/?paid=1&event_id=' + encodeURIComponent(data.event_id || '');
-    if (window.opener && !window.opener.closed) {{
-      try {{
-        window.opener.location.href = redirectUrl;
-      }} catch (e) {{}}
+  try {{
+    const r = await fetch('/payments/fake/callback/', {{
+      method:'POST',
+      headers: {{'Content-Type':'application/json'}},
+      body: JSON.stringify({{authority: '{authority}', status}})
+    }});
+    let data;
+    try {{
+      data = await r.json();
+    }} catch (e) {{
+      data = {{ raw: await r.text(), http_status: r.status }};
     }}
-    setTimeout(() => {{
-      window.location.href = redirectUrl;
-    }}, 700);
+    document.getElementById('out').textContent = JSON.stringify(data, null, 2);
+    if (status === 'success' && r.ok) {{
+      const redirectUrl = '/?paid=1&event_id=' + encodeURIComponent(data.event_id || '{event_id}');
+      if (window.opener && !window.opener.closed) {{
+        try {{
+          window.opener.location.href = redirectUrl;
+        }} catch (e) {{}}
+      }}
+      setTimeout(() => {{
+        window.location.href = redirectUrl;
+      }}, 700);
+    }}
+  }} catch (e) {{
+    document.getElementById('out').textContent = 'JS error: ' + String(e);
   }}
 }}
 </script>
 </body>
 </html>"""
     return HttpResponse(html)
+
+
+@csrf_exempt
+@require_POST
+def fake_payment_callback(request):
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    authority = body.get("authority")
+    status = body.get("status", "failed")
+    if not authority:
+        return JsonResponse({"error": "authority required"}, status=400)
+    success = status == "success"
+    try:
+        result = finalize_payment(
+            authority=authority,
+            provider=Payment.PROVIDER_FAKE,
+            success=success,
+        )
+    except Payment.DoesNotExist:
+        return JsonResponse({"error": "Payment not found"}, status=404)
+    return JsonResponse(result)
 
 
 @csrf_exempt
@@ -367,14 +416,18 @@ def pay_order(request, order_id):
     status = body.get("status", "success")
     success = status == "success"
     try:
-        order, err = services.complete_order_payment(order_id, success=success)
+        payment = Payment.objects.select_related("order").filter(
+            order_id=order_id,
+            provider=Payment.PROVIDER_FAKE,
+        ).first()
+        if not payment:
+            return JsonResponse({"error": "Payment not found"}, status=404)
+        result = finalize_payment(
+            authority=payment.authority,
+            provider=Payment.PROVIDER_FAKE,
+            success=success,
+        )
+        result["message"] = "Payment captured" if success else "Payment failed, order cancelled"
+        return JsonResponse(result)
     except Order.DoesNotExist:
         return JsonResponse({"error": "Order not found"}, status=404)
-    if err:
-        return JsonResponse({"error": err}, status=400)
-    return JsonResponse({
-        "order_id": order.id,
-        "event_id": order.event_id,
-        "status": order.status,
-        "message": "Payment captured" if success else "Payment failed, order cancelled",
-    })

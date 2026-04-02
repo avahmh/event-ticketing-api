@@ -128,6 +128,35 @@ class OrderItem(models.Model):
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
 
 
+class Payment(models.Model):
+    PROVIDER_FAKE = "fake"
+    PROVIDER_CHOICES = [
+        (PROVIDER_FAKE, "Fake"),
+    ]
+
+    STATUS_PENDING = "pending"
+    STATUS_SUCCEEDED = "succeeded"
+    STATUS_FAILED = "failed"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_SUCCEEDED, "Succeeded"),
+        (STATUS_FAILED, "Failed"),
+        (STATUS_CANCELLED, "Cancelled"),
+    ]
+
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES, default=PROVIDER_FAKE)
+    authority = models.CharField(max_length=255, unique=True)
+    idempotency_key = models.CharField(max_length=255, unique=True)
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="payments")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class OutboxEvent(models.Model):
 
     EVENT_TYPES = [

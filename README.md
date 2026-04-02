@@ -7,6 +7,8 @@ Django API for event ticketing with **general admission** (inventory-based) and 
 - **General admission**: purchase by quantity with idempotency and concurrent-safe inventory.
 - **Reserved seating**: venue → hall → zones → sections → seats; per-event `EventSeat` state (`available` / `reserved` / `sold`).
 - **Reservation flow**: hold seats with TTL, confirm to create an order, fake payment gateway for demos, optional Celery task to expire unpaid holds.
+- **Modular payment flow**: provider-oriented payment service with callback finalization, idempotent payment creation, and safe re-callback handling.
+- **Redis seat locks (load shedding)**: per-seat Redis locks before DB transactions to reduce hot-spot contention during bursts.
 - **Outbox pattern**: `OutboxEvent` rows for downstream integration (processed by a periodic task).
 - **Sample data**: `seed_teatrshahr` management command for a demo hall and events.
 
@@ -14,7 +16,7 @@ Django API for event ticketing with **general admission** (inventory-based) and 
 
 - Python 3.12, Django 5+
 - PostgreSQL
-- Redis (Celery broker and result backend)
+- Redis (Celery broker/result backend and per-seat locking)
 - Celery + Celery Beat
 - Structlog (JSON logs)
 
@@ -93,6 +95,26 @@ See **`.env.example`**. Common keys:
 | `RESERVATION_MINUTES` | How long a seat hold lasts before expiry cleanup |
 | `EXPIRE_RESERVATIONS_INTERVAL_SECONDS` | How often Beat enqueues the expiry task |
 | `PROCESS_OUTBOX_INTERVAL_SECONDS` | How often Beat enqueues outbox processing |
+| `SEAT_LOCK_TTL_SECONDS` | Redis lock TTL for seat holds (prevents lock leaks on crash) |
+| `REDIS_LOCK_URL` | Redis URL for locking (defaults to `CELERY_BROKER_URL`) |
+
+## Redis locking notes (reserved seating)
+
+Reserved seating uses Postgres row locks as the correctness layer, and adds **per-seat Redis locks** to reduce DB load when many users try to reserve the same seats.
+
+- **Wrong unlock prevention**: locks store a unique token; release deletes the key only if the token matches (Lua check) so an expired lock cannot delete a newer lock acquired by someone else.
+- **Multi-lock deadlock prevention**: when reserving multiple seats, lock keys are acquired in a deterministic order (sorted seat IDs) so competing requests do not deadlock.
+- **Lock leak protection**: every lock has a TTL so if the process crashes mid-flight the lock expires automatically.
+
+## Payment architecture notes
+
+Payments are implemented in a modular way under `tickets/payments/` so the fake provider can later be swapped with a real gateway (e.g. Zarinpal) without changing reservation/order core logic.
+
+- **Idempotent payment creation**: each payment is created with an idempotency key and reused on retries instead of creating duplicate payment rows.
+- **Authority-based callback**: payment callback finalization is keyed by payment `authority` (provider reference), not by client session.
+- **Transactional finalize**: callback finalization runs in a DB transaction with row locks to update payment, order, reservation, and seats atomically.
+- **Replay-safe callback**: repeated callbacks for the same authority are safe (already-finalized payments return current state instead of double-processing).
+- **Seat state synchronization**: payment success moves seats to `sold`; payment failure/cancel moves them back to `available`.
 
 ## API overview
 
@@ -104,8 +126,9 @@ See **`.env.example`**. Common keys:
 | GET | `/events/<id>/seatmap/` | Reserved event seat map JSON |
 | POST | `/events/<id>/reservations/` | Hold seats (JSON `seat_ids`, `Idempotency-Key`) |
 | POST | `/events/<id>/reservations/confirm/` | Create order from hold (then pay via fake gateway) |
+| POST | `/payments/fake/callback/` | Finalize payment by `authority` (`success` / `failed`) |
 | POST | `/orders/<id>/pay/` | Fake payment (`{"status":"success"}` or `"failed"`) |
-| GET | `/payments/fake/<order_id>/` | Demo payment page |
+| GET | `/payments/fake/<authority>/` | Demo payment page |
 | GET/PATCH | `/events/<id>/orders/`, `/orders/<id>/`, `/orders/<id>/cancel/` | Orders |
 
 ## Load testing

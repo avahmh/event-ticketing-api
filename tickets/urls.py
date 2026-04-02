@@ -8,6 +8,7 @@ from .views import (
     confirm_reservation,
     fake_payment_page,
     pay_order,
+    fake_payment_callback,
 )
 
 urlpatterns = [
@@ -18,5 +19,6 @@ urlpatterns = [
     path("orders/<int:order_id>/", get_order, name="get-order"),
     path("orders/<int:order_id>/cancel/", cancel_order, name="cancel-order"),
     path("orders/<int:order_id>/pay/", pay_order, name="pay-order"),
-    path("payments/fake/<int:order_id>/", fake_payment_page, name="fake-payment-page"),
+    path("payments/fake/callback/", fake_payment_callback, name="fake-payment-callback"),
+    path("payments/fake/<str:authority>/", fake_payment_page, name="fake-payment-page"),
 ]

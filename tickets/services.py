@@ -6,6 +6,7 @@ from datetime import timedelta
 
 from events.models import Event
 from venues.models import Seat
+from .redis_lock import MultiRedisLock, seat_lock_keys
 from .models import (
     EventSeat,
     Reservation,
@@ -17,6 +18,7 @@ from .models import (
 
 
 RESERVATION_MINUTES = int(os.environ.get("RESERVATION_MINUTES", "10"))
+SEAT_LOCK_TTL_SECONDS = int(os.environ.get("SEAT_LOCK_TTL_SECONDS", "8"))
 
 
 def reserve_seats(event_id, seat_ids, idempotency_key):
@@ -24,6 +26,10 @@ def reserve_seats(event_id, seat_ids, idempotency_key):
     if not event.is_reserved_seating:
         return None, "Event is not reserved seating"
     try:
+        keys = seat_lock_keys(event_id, seat_ids)
+        with MultiRedisLock(keys, SEAT_LOCK_TTL_SECONDS) as lock:
+            if lock is None:
+                return None, "Seat is busy, retry"
         with transaction.atomic():
             existing = Reservation.objects.filter(
                 event_id=event_id,
@@ -90,7 +96,7 @@ def confirm_reservation(reservation_id, idempotency_key=None, event_id=None):
         return None, "Reservation does not belong to this event"
     if reservation.reserved_until < timezone.now():
         return None, "Reservation expired"
-    key = idempotency_key or reservation.idempotency_key
+    key = reservation.idempotency_key
     with transaction.atomic():
         reservation = Reservation.objects.select_for_update().get(id=reservation_id)
         if reservation.status != Reservation.STATUS_ACTIVE:
