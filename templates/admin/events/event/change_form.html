@@ -1,0 +1,130 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+(function () {
+  var TAB_LABELS = ["تصاویر", "رویداد", "مکان", "صفحه خرید", "سانس‌ها", "نظرات"];
+
+  function allPanels(container) {
+    return Array.prototype.slice.call(
+      container.querySelectorAll(":scope > .module, :scope > .inline-group")
+    );
+  }
+
+  function panelTitle(panel, index) {
+    var heading = panel.querySelector("h2, .inline-heading, .fieldset-heading");
+    var title = heading && heading.textContent.trim();
+    if (heading) heading.style.display = "none";
+    return title || TAB_LABELS[index] || ("بخش " + (index + 1));
+  }
+
+  function ensureTabs(container, panels) {
+    var tabs = container.querySelector(".event-admin-tabs");
+    if (tabs) return tabs;
+
+    tabs = document.createElement("ul");
+    tabs.className = "changeform-tabs event-admin-tabs";
+
+    panels.forEach(function (panel, index) {
+      panel.classList.add("event-tab-panel", "event_tab_" + index, "initialized");
+      panel.id = panel.id || ("event-tab-panel-" + index);
+      if (panel.classList.contains("event-images-top")) {
+        panel.classList.add("event-tab-images");
+      }
+
+      var item = document.createElement("li");
+      item.className = "changeform-tabs-item" + (index === 0 ? " selected" : "");
+
+      var link = document.createElement("a");
+      link.className = "changeform-tabs-item-link";
+      link.href = "#/tab/event_tab_" + index + "/";
+      link.textContent = panelTitle(panel, index);
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
+        showPanel(container, tabs, index);
+        var href = link.getAttribute("href");
+        if (history.replaceState) {
+          history.replaceState(null, "", href);
+        } else {
+          location.hash = href.slice(1);
+        }
+      });
+
+      item.appendChild(link);
+      tabs.appendChild(item);
+    });
+
+    container.classList.add("event-admin-shell");
+    container.insertBefore(tabs, container.firstChild);
+    return tabs;
+  }
+
+  function showPanel(container, tabs, activeIndex) {
+    var panels = allPanels(container);
+    panels.forEach(function (panel, index) {
+      var active = index === activeIndex;
+      panel.classList.toggle("selected", active);
+      panel.style.setProperty("display", active ? "block" : "none", "important");
+    });
+
+    Array.prototype.forEach.call(tabs.querySelectorAll(".changeform-tabs-item"), function (item, index) {
+      item.classList.toggle("selected", index === activeIndex);
+    });
+  }
+
+  function parseHashIndex(panelCount) {
+    var match = (location.hash || "").match(/event_tab_(\d+)/);
+    if (!match) return 0;
+    var index = parseInt(match[1], 10);
+    if (index < 0 || index >= panelCount) return 0;
+    return index;
+  }
+
+  function fixEventAdminLayout(attempt) {
+    var form = document.querySelector(".change-form.model-event");
+    if (!form) return;
+
+    var container = form.querySelector("#content-main > form > div");
+    if (!container) return;
+
+    var panels = allPanels(container);
+    if (!panels.length) {
+      if (attempt < 40) setTimeout(function () { fixEventAdminLayout(attempt + 1); }, 100);
+      return;
+    }
+
+    container.querySelectorAll(".changeform-tabs:not(.event-admin-tabs)").forEach(function (el) {
+      el.remove();
+    });
+
+    var tabs = ensureTabs(container, panels);
+    var activeIndex = parseHashIndex(panels.length);
+    showPanel(container, tabs, activeIndex);
+  }
+
+  function run() {
+    fixEventAdminLayout(0);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(run, 120);
+    });
+  } else {
+    setTimeout(run, 120);
+  }
+
+  window.addEventListener("hashchange", function () {
+    var form = document.querySelector(".change-form.model-event");
+    if (!form) return;
+    var container = form.querySelector("#content-main > form > div");
+    var tabs = container && container.querySelector(".event-admin-tabs");
+    if (!tabs) return;
+    var panels = allPanels(container);
+    var index = parseHashIndex(panels.length);
+    showPanel(container, tabs, index);
+  });
+})();
+</script>
+{% endblock %}

@@ -278,13 +278,14 @@ def reserve_seats(request, event_id):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
     seat_ids = body.get("seat_ids") or []
+    session_id = body.get("session_id")
     idempotency_key = request.headers.get("Idempotency-Key")
     if not idempotency_key:
         return JsonResponse({"error": "Idempotency-Key header is required"}, status=400)
     if not seat_ids or not isinstance(seat_ids, list):
         return JsonResponse({"error": "seat_ids list required"}, status=400)
     seat_ids = [int(s) for s in seat_ids]
-    reservation, err = services.reserve_seats(event_id, seat_ids, idempotency_key)
+    reservation, err = services.reserve_seats(event_id, seat_ids, idempotency_key, session_id=session_id)
     if err:
         return JsonResponse({"error": err}, status=400 if err != "Reservation conflict" else 409)
     return JsonResponse({

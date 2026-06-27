@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سینما کده — برگزارکننده‌ها</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf5f5;
+      --card: #fff;
+      --text: #1c0a0a;
+      --muted: #7f6b6b;
+      --primary: #c41e3a;
+      --primary-dark: #9f1239;
+      --primary-soft: #fef2f2;
+      --border: #ecd5d5;
+      --header-from: #450a0a;
+      --header-to: #991b1b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Vazirmatn", Tahoma, sans-serif; background: var(--bg); color: var(--text); }
+    a { color: inherit; text-decoration: none; }
+    .site-header {
+      background: linear-gradient(135deg, var(--header-from), var(--header-to));
+      color: #fff;
+      padding: 0.85rem 1rem;
+      box-shadow: 0 4px 20px rgba(69, 10, 10, 0.35);
+    }
+    .header-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .brand { font-size: 1.35rem; font-weight: 700; }
+    .brand span { color: #d4a853; }
+    .nav a {
+      color: rgba(255,255,255,0.9);
+      font-size: 0.88rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 8px;
+    }
+    .nav a:hover, .nav a.active { background: rgba(255,255,255,0.12); }
+    .container { max-width: 1240px; margin: 0 auto; padding: 1rem; }
+    h1 { margin: 0 0 0.35rem; font-size: 1.35rem; }
+    .sub { color: var(--muted); margin: 0 0 1rem; font-size: 0.9rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 0.85rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .logo-wrap {
+      height: 120px;
+      display: grid;
+      place-items: center;
+      background: var(--primary-soft);
+      padding: 1rem;
+    }
+    .logo-wrap img {
+      max-width: 100%;
+      max-height: 88px;
+      object-fit: contain;
+    }
+    .logo-fallback {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .body { padding: 0.85rem; flex: 1; display: flex; flex-direction: column; }
+    .name { margin: 0 0 0.35rem; font-size: 1rem; font-weight: 700; }
+    .desc {
+      margin: 0 0 0.65rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .section-title { font-size: 0.72rem; color: var(--muted); margin: 0.35rem 0 0.25rem; }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .tag {
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+      border-radius: 999px;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.72rem;
+    }
+    .empty { color: var(--muted); padding: 2rem 0; text-align: center; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="/">سینما <span>کده</span></a>
+      <nav class="nav">
+        <a href="/">اجرها</a>
+        <a href="/venues/">مکان‌ها</a>
+        <a href="/organizers/" class="active">برگزارکننده‌ها</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1>برگزارکننده‌ها</h1>
+    <p class="sub">گروه‌ها و مجموعه‌های برگزارکنندهٔ اجرا در مکان‌ها و سالن‌های مختلف</p>
+    <div id="grid" class="grid">در حال بارگذاری…</div>
+  </div>
+
+  <script>
+    function initial(name) {
+      return (name || "?").trim().charAt(0) || "?";
+    }
+
+    function cardHtml(o) {
+      const logo = o.logo_url
+        ? `<img src="${o.logo_url.replace(/'/g, "%27")}" alt="">`
+        : `<div class="logo-fallback">${initial(o.name)}</div>`;
+      const venues = (o.venues || []).map(v => `<span class="tag">${v.name}${v.city ? " · " + v.city : ""}</span>`).join("");
+      const halls = (o.halls || []).map(h => `<span class="tag">${h.venue_name ? h.venue_name + " / " : ""}${h.name}</span>`).join("");
+      return `<article class="card">
+        <div class="logo-wrap">${logo}</div>
+        <div class="body">
+          <h2 class="name">${o.name}</h2>
+          ${o.description ? `<p class="desc">${o.description}</p>` : ""}
+          ${venues ? `<p class="section-title">مکان‌های برگزاری</p><div class="tags">${venues}</div>` : ""}
+          ${halls ? `<p class="section-title">سالن‌ها</p><div class="tags">${halls}</div>` : ""}
+        </div>
+      </article>`;
+    }
+
+    async function load() {
+      const r = await fetch("/venues/organizers/");
+      const data = await r.json();
+      const el = document.getElementById("grid");
+      el.innerHTML = data.length
+        ? data.map(cardHtml).join("")
+        : '<p class="empty">برگزارکننده‌ای ثبت نشده. از ادمین → برگزارکننده‌ها اضافه کنید.</p>';
+    }
+    load();
+  </script>
+</body>
+</html>

@@ -28,14 +28,19 @@ services:
       retries: 5
 
   web:
-    build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    build:
+      context: .
+      dockerfile: Dockerfile.example
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     env_file: .env
     environment:
+      DEBUG: "True"
       DATABASE_HOST: db
       DATABASE_PORT: "5432"
       CELERY_BROKER_URL: redis://redis:6379/0
@@ -47,7 +52,9 @@ services:
         condition: service_healthy
 
   celery:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.example
     command: celery -A core worker -l info
     volumes:
       - .:/app
@@ -66,7 +73,9 @@ services:
         condition: service_started
 
   celery_beat:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.example
     command: celery -A core beat -l info
     volumes:
       - .:/app

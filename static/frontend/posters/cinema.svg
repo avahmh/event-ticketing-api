@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" role="img" aria-label="3ÌFE'">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a0a0a"/>
+      <stop offset="55%" stop-color="#7f1d1d"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="560" fill="url(#bg)"/>
+  <rect width="400" height="200" y="0" fill="url(#shine)"/>
+  <rect x="36" y="72" width="328" height="48" rx="8" fill="#111827" opacity=".55"/>
+  <rect x="52" y="88" width="24" height="16" rx="2" fill="#fbbf24"/>
+  <rect x="84" y="88" width="24" height="16" rx="2" fill="#fbbf24"/>
+  <rect x="116" y="88" width="24" height="16" rx="2" fill="#fbbf24"/>
+  <rect x="148" y="88" width="24" height="16" rx="2" fill="#fbbf24"/>
+  <rect x="180" y="88" width="24" height="16" rx="2" fill="#fbbf24"/>
+  <rect x="212" y="88" width="24" height="16" rx="2" fill="#fbbf24"/>
+  <rect x="244" y="88" width="24" height="16" rx="2" fill="#fbbf24"/>
+  <rect x="276" y="88" width="24" height="16" rx="2" fill="#fbbf24"/>
+  <rect x="308" y="88" width="24" height="16" rx="2" fill="#fbbf24"/>
+  <circle cx="200" cy="290" r="88" fill="none" stroke="#fde68a" stroke-width="10" opacity=".9"/>
+  <polygon points="178,250 178,330 252,290" fill="#fde68a"/>
+  <text x="200" y="470" text-anchor="middle" fill="#fff" font-family="Tahoma,Arial,sans-serif" font-size="42" font-weight="700">3ÌFE'</text>
+  <text x="200" y="510" text-anchor="middle" fill="#fde68a" font-family="Tahoma,Arial,sans-serif" font-size="18" opacity=".9">'©1'F HÌ˜G</text>
+</svg>

@@ -31,3 +31,6 @@ Dockerfile
 # Celery / runtime
 celerybeat-schedule
 celerybeat-schedule.*
+
+# Collected static (production)
+staticfiles/

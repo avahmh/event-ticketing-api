@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" role="img" aria-label="©F31*">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="45%" stop-color="#6d28d9"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#fff" stop-opacity=".35"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="560" fill="url(#bg)"/>
+  <ellipse cx="200" cy="180" rx="160" ry="120" fill="url(#glow)"/>
+  <rect x="165" y="220" width="70" height="140" rx="35" fill="#111827" opacity=".7"/>
+  <circle cx="200" cy="210" r="42" fill="#111827" opacity=".7"/>
+  <path d="M120,360 Q200,300 280,360" fill="none" stroke="#f472b6" stroke-width="6" stroke-linecap="round"/>
+  <path d="M100,390 Q200,330 300,390" fill="none" stroke="#c084fc" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+  <circle cx="90" cy="120" r="4" fill="#fde68a"/>
+  <circle cx="310" cy="140" r="5" fill="#fde68a"/>
+  <circle cx="250" cy="90" r="3" fill="#fff"/>
+  <circle cx="150" cy="95" r="3" fill="#fff"/>
+  <text x="200" y="470" text-anchor="middle" fill="#fff" font-family="Tahoma,Arial,sans-serif" font-size="42" font-weight="700">©F31*</text>
+  <text x="200" y="510" text-anchor="middle" fill="#f5d0fe" font-family="Tahoma,Arial,sans-serif" font-size="18">',1'Ì 2F/G</text>
+</svg>

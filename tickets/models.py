@@ -1,5 +1,5 @@
 from django.db import models
-from events.models import Event
+from events.models import Event, EventSession
 
 
 class TicketInventory(models.Model):
@@ -13,6 +13,22 @@ class TicketInventory(models.Model):
 
     def __str__(self):
         return f"{self.event.title} | {self.available}/{self.total}"
+
+
+class EventRowPrice(models.Model):
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="row_prices"
+    )
+    row_label = models.CharField(max_length=20, verbose_name="ردیف")
+    price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت")
+
+    class Meta:
+        unique_together = [("event", "row_label")]
+        verbose_name = "قیمت ردیف"
+        verbose_name_plural = "قیمت‌های ردیف"
+
+    def __str__(self):
+        return f"{self.event.title} — ردیف {self.row_label}: {self.price}"
 
 
 class EventSeat(models.Model):
@@ -61,6 +77,13 @@ class Reservation(models.Model):
         max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    session = models.ForeignKey(
+        EventSession,
+        on_delete=models.CASCADE,
+        related_name="reservations",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         indexes = [
@@ -108,6 +131,13 @@ class Order(models.Model):
         max_digits=12, decimal_places=2, null=True, blank=True
     )
     currency = models.CharField(max_length=3, default="USD")
+    session = models.ForeignKey(
+        EventSession,
+        on_delete=models.CASCADE,
+        related_name="orders",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         unique_together = ("event", "idempotency_key")

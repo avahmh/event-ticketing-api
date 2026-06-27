@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" role="img" aria-label="*&'*1">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c1a3a"/>
+      <stop offset="50%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#312e81"/>
+    </linearGradient>
+    <linearGradient id="curtain" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#991b1b"/>
+      <stop offset="50%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="560" fill="url(#bg)"/>
+  <path d="M0,0 H400 V120 C320,150 80,150 0,120 Z" fill="#111827" opacity=".5"/>
+  <path d="M0,100 Q100,180 200,120 T400,100 V360 Q300,420 200,380 T0,360 Z" fill="url(#curtain)" opacity=".95"/>
+  <ellipse cx="200" cy="430" rx="150" ry="28" fill="#000" opacity=".35"/>
+  <rect x="70" y="455" width="260" height="8" rx="4" fill="#fbbf24" opacity=".8"/>
+  <circle cx="120" cy="300" r="6" fill="#fde68a"/>
+  <circle cx="200" cy="280" r="8" fill="#fde68a"/>
+  <circle cx="280" cy="300" r="6" fill="#fde68a"/>
+  <text x="200" y="500" text-anchor="middle" fill="#fff" font-family="Tahoma,Arial,sans-serif" font-size="42" font-weight="700">*&'*1</text>
+  <text x="200" y="535" text-anchor="middle" fill="#bfdbfe" font-family="Tahoma,Arial,sans-serif" font-size="18">5-FG 2F/G</text>
+</svg>

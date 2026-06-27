@@ -1,592 +1,929 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Ticketing</title>
-    <style>
-        * { box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 0 auto; padding: 1.25rem; color: #0f172a; }
-        h1, h2, h3 { margin: 0 0 0.75rem 0; }
-        section { margin-bottom: 1.5rem; }
-        .card { border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; padding: 1rem; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .event { border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; }
-        .meta { color: #475569; font-size: 0.92rem; }
-        .available { font-weight: 600; color: #166534; }
-        form { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; }
-        label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.92rem; }
-        select, input, button { padding: 0.5rem 0.72rem; font-size: 0.95rem; border-radius: 6px; }
-        select, input { border: 1px solid #cbd5e1; }
-        button { cursor: pointer; border: none; background: #2563eb; color: #fff; }
-        button:hover { background: #1d4ed8; }
-        button:disabled { background: #94a3b8; cursor: not-allowed; }
-        .cancel { background: #dc2626; }
-        .cancel:hover { background: #b91c1c; }
-        .msg { margin-top: 0.5rem; padding: 0.5rem; border-radius: 6px; font-size: 0.92rem; }
-        .ok { background: #f0fdf4; color: #166534; }
-        .err { background: #fef2f2; color: #b91c1c; }
-        .loading { color: #64748b; }
-        .orders table { width: 100%; border-collapse: collapse; }
-        .orders th, .orders td { text-align: left; padding: 0.45rem; border-bottom: 1px solid #e2e8f0; font-size: 0.92rem; }
-        .status { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.8rem; }
-        .status.confirmed { background: #dcfce7; color: #166534; }
-        .status.cancelled { background: #fee2e2; color: #b91c1c; }
-        .status.reserved { background: #fef3c7; color: #92400e; }
-        .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem; font-size: 0.88rem; }
-        .chip { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 0.35rem; vertical-align: middle; }
-        .chip.available { background: #f59e0b; }
-        .chip.selected { background: #2563eb; }
-        .chip.reserved { background: #ef4444; }
-        .chip.sold { background: #64748b; }
-        .seatmap-wrap { border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; padding: 0.8rem; }
-        .seatmap-toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.6rem; }
-        .seatmap-zones { display: grid; gap: 0.75rem; }
-        .zone { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.6rem; }
-        .zone h4 { margin: 0 0 0.5rem 0; font-size: 0.95rem; }
-        .sections { display: grid; gap: 0.6rem; }
-        .section { border: 1px dashed #cbd5e1; border-radius: 7px; padding: 0.5rem; background: #f8fafc; }
-        .section-title { font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; }
-        .seat-grid { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(16px, 16px)); align-content: start; }
-        .seat { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #b45309; background: #f59e0b; cursor: pointer; }
-        .seat.selected { background: #2563eb; border-color: #1e40af; }
-        .seat.reserved { background: #ef4444; border-color: #b91c1c; cursor: not-allowed; }
-        .seat.sold { background: #64748b; border-color: #334155; cursor: not-allowed; }
-        .seat.unavailable { background: #94a3b8; border-color: #475569; cursor: not-allowed; }
-        .seatmap-empty { color: #64748b; }
-        .hidden { display: none; }
-        .teatr-map { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; padding: 0.7rem; }
-        .teatr-top { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 0.5rem; margin-bottom: 0.6rem; }
-        .teatr-box { text-align: center; color: #fff; font-size: 0.75rem; padding: 0.35rem 0.25rem; border-radius: 4px; }
-        .teatr-box.exit { background: #b91c1c; }
-        .teatr-box.toilet { background: #e5e7eb; color: #111827; }
-        .teatr-main { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 0.6rem; align-items: start; }
-        .teatr-side { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.4rem; }
-        .teatr-side h5 { margin: 0 0 0.3rem 0; text-align: center; color: #334155; font-size: 0.78rem; }
-        .teatr-center { display: grid; gap: 0.45rem; }
-        .teatr-standing { background: #84cc16; border-radius: 4px; min-height: 170px; display: grid; place-items: center; color: #14532d; font-weight: 600; font-size: 0.78rem; }
-        .teatr-drinks { background: #d946ef; color: #fff; border-radius: 4px; min-height: 170px; display: grid; place-items: center; font-size: 0.78rem; }
-        .teatr-center-grid { display: grid; grid-template-columns: 36px 1fr 36px; gap: 0.2rem; }
-        .teatr-fanpit { background: #ef4444; color: #fff; border-radius: 4px; min-height: 60px; display: grid; place-items: center; font-size: 0.8rem; }
-        .teatr-stage { background: #2563eb; color: #fff; border-radius: 4px; min-height: 48px; display: grid; place-items: center; font-size: 0.82rem; font-weight: 600; }
-        .teatr-vip-row { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 0.6rem; margin-top: 0.45rem; }
-        .seat-row { display: flex; gap: 4px; flex-wrap: nowrap; margin-bottom: 4px; }
-        .seat-row.center { justify-content: center; }
-        .vip-label { font-size: 0.74rem; color: #334155; margin-bottom: 0.2rem; text-align: center; }
-        @media (max-width: 900px) {
-            .grid-2 { grid-template-columns: 1fr; }
-            .teatr-main { grid-template-columns: 1fr; }
-            .teatr-vip-row { grid-template-columns: 1fr; }
-            .teatr-center-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سینما کده — بلیت سینما و تئاتر</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf5f5;
+      --card: #fff;
+      --text: #1c0a0a;
+      --muted: #7f6b6b;
+      --primary: #c41e3a;
+      --primary-dark: #9f1239;
+      --primary-soft: #fef2f2;
+      --accent: #fbae20;
+      --border: #ecd5d5;
+      --success: #15803d;
+      --warn: #b45309;
+      --danger: #b91c1c;
+      --header-from: #450a0a;
+      --header-to: #991b1b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    a { color: inherit; text-decoration: none; }
+    .site-header {
+      position: relative;
+      z-index: 50;
+      background: linear-gradient(
+        to right,
+        #120608 0%,
+        #18090d 20%,
+        #220e14 40%,
+        #2a1218 50%,
+        #6b1420 62%,
+        #9a1118 78%,
+        #b81016 90%,
+        #c30f16 100%
+      );
+      color: #fff;
+      padding: 0.9rem 1rem 1rem;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.05) inset,
+        0 8px 24px rgba(24, 6, 10, 0.32),
+        0 2px 6px rgba(0, 0, 0, 0.12);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    }
+    .site-header::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: linear-gradient(
+        90deg,
+        transparent 5%,
+        rgba(251, 174, 32, 0.28) 50%,
+        transparent 95%
+      );
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    .header-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+    .brand {
+      font-size: 1.35rem;
+      font-weight: 700;
+      white-space: nowrap;
+      letter-spacing: -0.02em;
+    }
+    .brand span { color: var(--accent); }
+    .header-nav {
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+    }
+    .header-nav a {
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 0.84rem;
+      font-weight: 500;
+      padding: 0.15rem 0;
+      white-space: nowrap;
+      transition: color 0.15s, opacity 0.15s;
+    }
+    .header-nav a:hover {
+      color: #fff;
+      opacity: 1;
+    }
+    .search-wrap { flex: 1; min-width: 200px; }
+    .search-wrap input {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 0.62rem 0.9rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      background: rgba(255, 255, 255, 0.97);
+      color: var(--text);
+      box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.18),
+        inset 0 1px 2px rgba(0, 0, 0, 0.04);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .search-wrap input::placeholder { color: #9ca3af; }
+    .search-wrap input:focus {
+      outline: none;
+      border-color: rgba(212, 168, 83, 0.65);
+      box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.22),
+        0 0 0 3px rgba(212, 168, 83, 0.22);
+    }
+    .container { max-width: 1240px; margin: 0 auto; padding: 0 1rem 2rem; }
+    .hero {
+      margin: 1rem 0;
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+      min-height: 300px;
+      background: linear-gradient(135deg, #1a0a12 0%, #2d1218 45%, #1c0a0a 100%);
+      color: #fff;
+      box-shadow: 0 12px 40px rgba(69, 10, 10, 0.2);
+    }
+    .hero-slide {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      min-height: 300px;
+    }
+    .hero-poster-wrap {
+      flex: 1.15;
+      min-width: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem 0.75rem 1rem 1rem;
+    }
+    .hero-poster {
+      width: 100%;
+      aspect-ratio: 21 / 9;
+      object-fit: cover;
+      object-position: center;
+      border-radius: 12px;
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.45);
+      background: #111;
+    }
+    .hero-poster-fallback {
+      width: 100%;
+      aspect-ratio: 21 / 9;
+      border-radius: 12px;
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.45);
+      background-size: cover;
+      background-position: center;
+    }
+    .hero-poster-badge {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.25rem;
+      background: rgba(0, 0, 0, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      letter-spacing: 0.04em;
+    }
+    .hero-info {
+      flex: 1;
+      padding: 1.5rem 1.25rem 1.5rem 3.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: right;
+      min-width: 0;
+    }
+    .hero-badge {
+      display: inline-block;
+      align-self: flex-start;
+      background: rgba(196, 30, 58, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.72rem;
+      margin-bottom: 0.55rem;
+    }
+    .hero h2 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.1rem, 2.2vw, 1.65rem);
+      font-weight: 700;
+      line-height: 1.55;
+    }
+    .hero-rating {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      color: #fde68a;
+      margin-bottom: 0.65rem;
+    }
+    .hero-rating .star { font-size: 1rem; }
+    .hero-rating .muted { color: rgba(255, 255, 255, 0.55); font-size: 0.8rem; }
+    .hero-details {
+      list-style: none;
+      margin: 0 0 0.75rem;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.82);
+    }
+    .hero-details li {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .hero-details .ico {
+      width: 18px;
+      text-align: center;
+      opacity: 0.75;
+      flex-shrink: 0;
+    }
+    .hero-desc {
+      margin: 0 0 1rem;
+      font-size: 0.84rem;
+      line-height: 1.75;
+      color: rgba(255, 255, 255, 0.72);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .hero-cta {
+      display: inline-block;
+      align-self: flex-start;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      color: #fff;
+      font-weight: 600;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      transition: background 0.15s, color 0.15s;
+    }
+    .hero-cta:hover { background: #fff; color: var(--primary-dark); }
+    .hero-cta.disabled {
+      opacity: 0.55;
+      pointer-events: none;
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+    .hero-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      cursor: pointer;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      font-size: 1.5rem;
+      line-height: 1;
+      padding: 0;
+      transition: background 0.15s;
+    }
+    .hero-nav:hover { background: rgba(255, 255, 255, 0.22); }
+    .hero-prev { right: 0.65rem; }
+    .hero-next { left: 0.65rem; }
+    .hero-dots {
+      position: absolute;
+      bottom: 0.75rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.35rem;
+    }
+    .hero-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    .hero-dot.active { background: #fff; width: 22px; border-radius: 4px; }
+    .sticky-bar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(250, 245, 245, 0.96);
+      backdrop-filter: blur(8px);
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+    }
+    .filter-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.55rem 0.7rem;
+      box-shadow: 0 2px 10px rgba(196, 30, 58, 0.06);
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      max-width: 100%;
+    }
+    .filter-group::-webkit-scrollbar { height: 0; }
+    .filter-divider {
+      width: 1px;
+      height: 28px;
+      background: var(--border);
+      flex-shrink: 0;
+      align-self: center;
+    }
+    .chip, .tab {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 0.38rem 0.8rem;
+      font-size: 0.82rem;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .chip.active, .tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(196, 30, 58, 0.25);
+    }
+    .filter-toolbar select {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.38rem 0.55rem;
+      font-family: inherit;
+      font-size: 0.8rem;
+      background: #fff;
+      color: var(--text);
+      max-width: 130px;
+    }
+    .filter-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    .filter-check input { accent-color: var(--primary); }
+    .section { margin: 1.25rem 0 0.5rem; }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.65rem;
+    }
+    .section-head h3 { margin: 0; font-size: 1.05rem; }
+    .section-head span { color: var(--muted); font-size: 0.8rem; }
+    .h-scroll {
+      display: flex;
+      gap: 0.85rem;
+      overflow-x: auto;
+      padding-bottom: 0.35rem;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .h-scroll::-webkit-scrollbar { height: 6px; }
+    .h-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.85rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      scroll-snap-align: start;
+      min-width: 200px;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .card:hover {
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+      transform: translateY(-2px);
+    }
+    .poster {
+      height: 260px;
+      background: linear-gradient(145deg, #1e293b, #475569);
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+    .poster-tag {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(0,0,0,0.65);
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+    }
+    .status-badge {
+      position: absolute;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.2rem 0.45rem;
+      border-radius: 6px;
+      color: #fff;
+    }
+    .status-badge.ok { background: var(--success); }
+    .status-badge.low { background: var(--warn); }
+    .status-badge.full { background: var(--danger); }
+    .status-badge.past { background: #64748b; }
+    .body { padding: 0.75rem; flex: 1; display: flex; flex-direction: column; }
+    .name { margin: 0 0 0.3rem; font-size: 0.92rem; font-weight: 600; line-height: 1.45; }
+    .meta { margin: 0; color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
+    .price-line {
+      margin: 0.25rem 0 0;
+      font-size: 0.82rem;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .row { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.45rem; }
+    .pill {
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+      border-radius: 999px;
+      padding: 0.15rem 0.45rem;
+      font-size: 0.68rem;
+    }
+    .cta {
+      margin-top: auto;
+      padding-top: 0.65rem;
+    }
+    .cta a {
+      display: block;
+      text-align: center;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 9px;
+      padding: 0.5rem;
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+    .cta a.disabled {
+      background: #94a3b8;
+      pointer-events: none;
+    }
+    .empty { color: var(--muted); padding: 1rem 0; font-size: 0.9rem; }
+    @media (max-width: 768px) {
+      .hero-slide { flex-direction: column-reverse; }
+      .hero-poster-wrap {
+        flex: none;
+        width: 100%;
+        max-width: none;
+        padding: 1rem 1rem 0;
+      }
+      .hero-poster, .hero-poster-fallback {
+        aspect-ratio: 16 / 9;
+      }
+      .hero-info { padding: 1rem 1.25rem 1.25rem; }
+      .hero-nav { width: 36px; height: 36px; font-size: 1.25rem; }
+    }
+    @media (max-width: 640px) {
+      .hero { min-height: auto; }
+      .poster { height: 220px; }
+      .sticky-bar { top: 0; }
+      .filter-divider { display: none; }
+      .filter-toolbar { gap: 0.4rem; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Event Ticketing</h1>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">سینما <span>کده</span></div>
+      <nav class="header-nav">
+        <a href="/venues/">مکان‌ها</a>
+        <a href="/organizers/">برگزارکننده‌ها</a>
+      </nav>
+      <div class="search-wrap">
+        <input id="search-input" type="search" placeholder="جستجو: فیلم، تئاتر، سالن، شهر…">
+      </div>
+    </div>
+  </header>
 
-    <section class="card">
-        <h2>Events</h2>
-        <div id="events-list" class="loading">Loading events...</div>
-    </section>
-
-    <section class="card grid-2">
-        <div>
-            <h2>General Admission Order</h2>
-            <form id="order-form">
-                <label>
-                    Event
-                    <select id="order-event" required></select>
-                </label>
-                <label>
-                    Quantity
-                    <input type="number" id="order-qty" min="1" value="1" required>
-                </label>
-                <button type="submit" id="order-btn">Place order</button>
-            </form>
-            <div id="order-msg"></div>
+  <div class="container">
+    <section class="hero" id="hero" hidden>
+      <button type="button" class="hero-nav hero-prev" id="hero-prev" aria-label="اسلاید قبلی">‹</button>
+      <div class="hero-slide">
+        <div class="hero-poster-wrap" id="hero-poster-wrap">
+          <img class="hero-poster" id="hero-poster" alt="" hidden>
+          <div class="hero-poster-fallback" id="hero-poster-fallback" hidden></div>
+          <span class="hero-poster-badge" id="hero-soldout" hidden>تمام شد</span>
         </div>
-
-        <div>
-            <h2>Reserved Seating</h2>
-            <div class="seatmap-wrap">
-                <div class="seatmap-toolbar">
-                    <label>
-                        Event
-                        <select id="seat-event"></select>
-                    </label>
-                    <button type="button" id="refresh-seatmap">Refresh map</button>
-                    <span id="seatmap-hall" class="meta"></span>
-                </div>
-                <div class="legend">
-                    <span><span class="chip available"></span>Available</span>
-                    <span><span class="chip selected"></span>Selected</span>
-                    <span><span class="chip reserved"></span>Reserved</span>
-                    <span><span class="chip sold"></span>Sold</span>
-                </div>
-                <div id="seatmap" class="seatmap-empty">Select a reserved-seating event</div>
-                <div style="margin-top: 0.6rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                    <button type="button" id="reserve-btn">Reserve selected seats</button>
-                    <button type="button" id="confirm-btn">Confirm reservation</button>
-                    <span id="seat-selection" class="meta">0 selected</span>
-                </div>
-                <div id="reservation-msg"></div>
-            </div>
+        <div class="hero-info">
+          <span class="hero-badge" id="hero-type"></span>
+          <h2 id="hero-title"></h2>
+          <div class="hero-rating" id="hero-rating"></div>
+          <ul class="hero-details" id="hero-details"></ul>
+          <p class="hero-desc" id="hero-desc"></p>
+          <a class="hero-cta" id="hero-link" href="#">خرید بلیت</a>
         </div>
+      </div>
+      <button type="button" class="hero-nav hero-next" id="hero-next" aria-label="اسلاید بعدی">›</button>
+      <div class="hero-dots" id="hero-dots"></div>
     </section>
 
-    <section class="card">
-        <h2>Orders for selected event</h2>
-        <div id="orders-list" class="loading">Select an event</div>
+    <div class="sticky-bar">
+      <div class="filter-toolbar">
+        <div class="filter-group" id="type-tabs">
+          <button type="button" class="tab active" data-type="">همه</button>
+          <button type="button" class="tab" data-type="cinema">سینما</button>
+          <button type="button" class="tab" data-type="theater">تئاتر</button>
+          <button type="button" class="tab" data-type="concert">کنسرت</button>
+        </div>
+        <span class="filter-divider" aria-hidden="true"></span>
+        <div class="filter-group" id="date-chips">
+          <button type="button" class="chip active" data-date="">همه</button>
+          <button type="button" class="chip" data-date="today">امشب</button>
+          <button type="button" class="chip" data-date="tomorrow">فردا</button>
+          <button type="button" class="chip" data-date="week">این هفته</button>
+        </div>
+        <span class="filter-divider" aria-hidden="true"></span>
+        <div class="filter-group">
+          <select id="city-filter" title="شهر"><option value="">همه شهرها</option></select>
+          <select id="sort-filter" title="مرتب‌سازی">
+            <option value="nearest">نزدیک‌ترین سانس</option>
+            <option value="newest">جدیدترین</option>
+            <option value="rating">امتیاز</option>
+            <option value="price">ارزان‌ترین</option>
+          </select>
+          <label class="filter-check">
+            <input type="checkbox" id="available-only"> فقط با بلیت
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="section-head">
+        <h3>اکران امشب و فردا</h3>
+        <span>اجراهای نزدیک</span>
+      </div>
+      <div id="soon-row" class="h-scroll">در حال بارگذاری…</div>
     </section>
 
-    <script>
-        const API = "";
-        const state = {
-            events: [],
-            selectedSeatIds: new Set(),
-            seatEventId: null,
-            reservationId: null
+    <section class="section hidden" id="featured-section" hidden>
+      <div class="section-head">
+        <h3>پیشنهاد ویژه</h3>
+        <span>منتخب سردبیر</span>
+      </div>
+      <div id="featured-row" class="h-scroll"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h3>همه اجراها</h3>
+        <span id="all-count"></span>
+      </div>
+      <div id="all-grid" class="grid">در حال بارگذاری…</div>
+    </section>
+  </div>
+
+  <script>
+    const API = "";
+    let allEvents = [];
+    let heroItems = [];
+    let heroIndex = 0;
+    let heroTimer = null;
+    const state = { type: "", date: "", city: "", sort: "nearest", q: "", availableOnly: false };
+
+    const TYPE_LABELS = { cinema: "سینما", theater: "تئاتر", concert: "کنسرت" };
+
+    function fmtPrice(n) {
+      if (n == null || n === "") return null;
+      return Number(n).toLocaleString("fa-IR");
+    }
+
+    function parseDate(v) {
+      return v ? new Date(v) : null;
+    }
+
+    function sessionDate(e) {
+      const ns = e.nearest_session;
+      return parseDate(ns && ns.starts_at) || parseDate(e.starts_at);
+    }
+
+    function formatSessionLine(e) {
+      const ns = e.nearest_session || {};
+      if (ns.label) return "نزدیک‌ترین سانس: " + ns.label;
+      if (ns.starts_at) {
+        return "نزدیک‌ترین سانس: " + new Date(ns.starts_at).toLocaleString("fa-IR", {
+          weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+        });
+      }
+      return "سانس اعلام نشده";
+    }
+
+    function capacityBadge(e) {
+      const ns = e.nearest_session || {};
+      if (ns.is_past) return { cls: "past", text: "پایان یافته" };
+      if (ns.is_full) return { cls: "full", text: "پر شد" };
+      const av = ns.available ?? e.available ?? 0;
+      if (av <= 5 && av > 0) return { cls: "low", text: "کم مانده" };
+      if (av <= 0) return { cls: "full", text: "تمام شد" };
+      return { cls: "ok", text: "بلیت دارد" };
+    }
+
+    function posterGradient(e) {
+      return e.event_type === "cinema"
+        ? "linear-gradient(145deg,#450a0a,#991b1b)"
+        : e.event_type === "concert"
+        ? "linear-gradient(145deg,#4c0519,#be123c)"
+        : "linear-gradient(145deg,#1c0a0a,#7f1d1d)";
+    }
+
+    function posterStyle(e) {
+      if (e.poster_url) return `background-image:url('${e.poster_url.replace(/'/g, "%27")}');background-size:cover;background-position:center`;
+      return `background:${posterGradient(e)}`;
+    }
+
+    function heroSessionTime(e) {
+      const ns = e.nearest_session || {};
+      const d = parseDate(ns.starts_at) || parseDate(e.starts_at);
+      if (!d) return "";
+      return d.toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function heroSessionDate(e) {
+      const ns = e.nearest_session || {};
+      const d = parseDate(ns.starts_at) || parseDate(e.starts_at);
+      if (!d) return "به‌زودی";
+      return d.toLocaleDateString("fa-IR", { weekday: "long", month: "long", day: "numeric" });
+    }
+
+    function heroSoldOut(e) {
+      const ns = e.nearest_session || {};
+      return ns.is_past || ns.is_full || e.available <= 0;
+    }
+
+    function wallpaperStyle(e) {
+      if (e.wallpaper_url) {
+        return `background-image:url('${e.wallpaper_url.replace(/'/g, "%27")}');background-size:cover;background-position:center`;
+      }
+      return `background:${posterGradient(e)}`;
+    }
+
+    function setHeroWallpaper(e) {
+      const img = document.getElementById("hero-poster");
+      const fallback = document.getElementById("hero-poster-fallback");
+      if (e.wallpaper_url) {
+        img.src = e.wallpaper_url;
+        img.alt = e.title || "";
+        img.hidden = false;
+        fallback.hidden = true;
+        img.onerror = () => {
+          img.hidden = true;
+          fallback.hidden = false;
+          fallback.style.cssText = wallpaperStyle(e);
         };
+      } else {
+        img.hidden = true;
+        fallback.hidden = false;
+        fallback.style.cssText = wallpaperStyle(e);
+      }
+    }
 
-        function getEvents() {
-            return fetch(API + "/events/").then(r => r.json());
-        }
+    function cardHtml(e, wide) {
+      const venue = [e.venue_name, e.hall_name].filter(Boolean).join(" · ");
+      const loc = [e.city, e.area].filter(Boolean).join(" - ");
+      const badge = capacityBadge(e);
+      const price = e.min_price != null ? `از ${fmtPrice(e.min_price)} تومان` : "";
+      const soldOut = (e.nearest_session && e.nearest_session.is_full) || e.available <= 0;
+      const past = e.nearest_session && e.nearest_session.is_past;
+      return `<article class="card" style="${wide ? "min-width:240px;" : ""}">
+        <div class="poster" style="${posterStyle(e)}">
+          <span class="poster-tag">${TYPE_LABELS[e.event_type] || "رویداد"}</span>
+          <span class="status-badge ${badge.cls}">${badge.text}</span>
+        </div>
+        <div class="body">
+          <h3 class="name">${e.title}</h3>
+          <p class="meta">${venue}${loc ? " · " + loc : ""}</p>
+          ${price ? `<p class="price-line">${price}</p>` : ""}
+          <div class="row">
+            ${e.genre ? `<span class="pill">${e.genre}</span>` : ""}
+            ${e.rating > 0 ? `<span class="pill">★ ${e.rating.toFixed(1)}</span>` : ""}
+          </div>
+          <div class="cta">
+            <a class="${soldOut || past ? "disabled" : ""}" href="/theaters/${e.id}/">${past ? "پایان یافته" : soldOut ? "تمام شد" : "خرید بلیت"}</a>
+          </div>
+        </div>
+      </article>`;
+    }
 
-        function getSeatmap(eventId) {
-            return fetch(API + "/events/" + eventId + "/seatmap/").then(r => r.json().then(data => ({ ok: r.ok, data })));
-        }
+    function isToday(d, now) {
+      return d && d.toDateString() === now.toDateString();
+    }
+    function isTomorrow(d, now) {
+      const t = new Date(now);
+      t.setDate(t.getDate() + 1);
+      return d && d.toDateString() === t.toDateString();
+    }
+    function isThisWeek(d, now) {
+      if (!d) return false;
+      const end = new Date(now);
+      end.setDate(end.getDate() + 7);
+      return d >= now && d <= end;
+    }
 
-        function reserveSeats(eventId, seatIds, key) {
-            return fetch(API + "/events/" + eventId + "/reservations/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Idempotency-Key": key },
-                body: JSON.stringify({ seat_ids: seatIds })
-            }).then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })));
-        }
-
-        function confirmReservation(eventId, reservationId, key) {
-            return fetch(API + "/events/" + eventId + "/reservations/confirm/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Idempotency-Key": key },
-                body: JSON.stringify({ reservation_id: reservationId })
-            }).then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })));
-        }
-
-        function placeOrder(eventId, quantity, idempotencyKey) {
-            const body = new URLSearchParams({ quantity: String(quantity) });
-            return fetch(API + "/events/" + eventId + "/tickets/", {
-                method: "POST",
-                headers: { "Idempotency-Key": idempotencyKey, "Content-Type": "application/x-www-form-urlencoded" },
-                body
-            }).then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })));
-        }
-
-        function getOrders(eventId) {
-            return fetch(API + "/events/" + eventId + "/orders/?page_size=50").then(r => r.json());
-        }
-
-        function cancelOrder(orderId) {
-            return fetch(API + "/orders/" + orderId + "/cancel/", { method: "PATCH" }).then(r => r.json());
-        }
-        function payOrder(orderId, status) {
-            return fetch(API + "/orders/" + orderId + "/pay/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: status || "success" })
-            }).then(r => r.json().then(data => ({ ok: r.ok, data })));
-        }
-
-        function statusClass(s) {
-            if (s === "reserved") return "reserved";
-            if (s === "sold") return "sold";
-            if (s === "available") return "";
-            return "unavailable";
-        }
-
-        function eventLabel(e) {
-            if (e.is_reserved_seating) return e.title + " (reserved seating)";
-            return e.title + " (" + (e.available || 0) + " left)";
-        }
-
-        function renderEvents(events) {
-            const el = document.getElementById("events-list");
-            if (!events.length) {
-                el.textContent = "No events.";
-                return;
-            }
-            el.innerHTML = events.map(e => `<div class="event">
-                <h3>${e.title}</h3>
-                <div class="meta">Starts: ${e.starts_at ? new Date(e.starts_at).toLocaleString() : "-"}</div>
-                <div class="meta">Type: ${e.is_reserved_seating ? "Reserved seating" : "General admission"}</div>
-                <div class="available">${e.available || 0} / ${e.total || 0} tickets available</div>
-            </div>`).join("");
-        }
-
-        function fillEventSelects(events) {
-            const orderSel = document.getElementById("order-event");
-            const seatSel = document.getElementById("seat-event");
-
-            orderSel.innerHTML = "<option value=''>Select event</option>" + events.filter(e => !e.is_reserved_seating).map(e =>
-                `<option value="${e.id}">${eventLabel(e)}</option>`
-            ).join("");
-
-            const reserved = events.filter(e => e.is_reserved_seating);
-            seatSel.innerHTML = "<option value=''>Select reserved event</option>" + reserved.map(e =>
-                `<option value="${e.id}">${eventLabel(e)}</option>`
-            ).join("");
-
-            orderSel.onchange = onEventSelect;
-            seatSel.onchange = onSeatEventSelect;
-        }
-
-        function renderOrders(orders) {
-            const msg = document.getElementById("orders-list");
-            if (!orders.length) {
-                msg.textContent = "No orders for this event.";
-                return;
-            }
-            msg.innerHTML = `<table class="orders"><thead><tr><th>ID</th><th>Qty</th><th>Status</th><th></th></tr></thead><tbody>
-                ${orders.map(o => `<tr><td>${o.id}</td><td>${o.quantity}</td><td><span class="status ${o.status}">${o.status}</span></td><td>${
-                    o.status === "confirmed"
-                        ? `<button type="button" class="cancel" data-order-id="${o.id}">Cancel</button>`
-                        : (o.status === "reserved" ? `<button type="button" class="pay" data-order-id="${o.id}">Pay</button>` : "")
-                }</td></tr>`).join("")}
-            </tbody></table>`;
-            msg.querySelectorAll("button.cancel").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const oid = btn.getAttribute("data-order-id");
-                    cancelOrder(oid).then(() => onEventSelect());
-                });
-            });
-            msg.querySelectorAll("button.pay").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const oid = btn.getAttribute("data-order-id");
-                    payOrder(oid, "success").then(() => {
-                        onEventSelect();
-                        onSeatEventSelect();
-                        loadEvents();
-                    });
-                });
-            });
-        }
-
-        function onEventSelect() {
-            const id = document.getElementById("order-event").value;
-            const msg = document.getElementById("orders-list");
-            if (!id) {
-                msg.textContent = "Select an event";
-                return;
-            }
-            msg.textContent = "Loading...";
-            getOrders(id).then(data => renderOrders(data.orders || [])).catch(() => {
-                msg.textContent = "Failed to load orders.";
-            });
-        }
-
-        function renderSeatmap(data) {
-            const el = document.getElementById("seatmap");
-            const hallEl = document.getElementById("seatmap-hall");
-            hallEl.textContent = data.hall ? ("Hall: " + data.hall.name) : "";
-            state.selectedSeatIds = new Set();
-            updateSeatSelectionLabel();
-
-            if (!data.zones || !data.zones.length) {
-                el.textContent = "No zones found for this hall.";
-                return;
-            }
-
-            if (data.hall && data.hall.name && data.hall.name.toLowerCase().includes("teatrshahr")) {
-                renderTeatrShahrSeatmap(data, el);
-                return;
-            }
-
-            el.innerHTML = '<div class="seatmap-zones"></div>';
-            const zonesRoot = el.querySelector(".seatmap-zones");
-
-            data.zones.forEach(zone => {
-                const zoneEl = document.createElement("div");
-                zoneEl.className = "zone";
-                zoneEl.innerHTML = `<h4>${zone.name}</h4><div class="sections"></div>`;
-                const sectionsEl = zoneEl.querySelector(".sections");
-
-                zone.sections.forEach(section => {
-                    const sec = document.createElement("div");
-                    sec.className = "section";
-                    sec.innerHTML = `<div class="section-title">Section: ${section.name}</div><div class="seat-grid"></div>`;
-                    const grid = sec.querySelector(".seat-grid");
-
-                    section.seats.forEach(seat => {
-                        const btn = document.createElement("button");
-                        btn.type = "button";
-                        btn.className = "seat " + statusClass(seat.status);
-                        btn.title = seat.label + (seat.price !== null ? (" - " + seat.price) : "");
-                        btn.dataset.seatId = String(seat.id);
-
-                        const selectable = seat.status === "available";
-                        if (!selectable) {
-                            btn.disabled = true;
-                        }
-
-                        btn.addEventListener("click", () => {
-                            const sid = seat.id;
-                            if (state.selectedSeatIds.has(sid)) {
-                                state.selectedSeatIds.delete(sid);
-                                btn.classList.remove("selected");
-                            } else {
-                                state.selectedSeatIds.add(sid);
-                                btn.classList.add("selected");
-                            }
-                            updateSeatSelectionLabel();
-                        });
-
-                        grid.appendChild(btn);
-                    });
-
-                    sectionsEl.appendChild(sec);
-                });
-
-                zonesRoot.appendChild(zoneEl);
-            });
-        }
-
-        function createSeatBtn(seat) {
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "seat " + statusClass(seat.status);
-            btn.title = seat.label + (seat.price !== null ? (" - " + seat.price) : "");
-            btn.dataset.seatId = String(seat.id);
-            if (seat.status !== "available") {
-                btn.disabled = true;
-            }
-            btn.addEventListener("click", () => {
-                const sid = seat.id;
-                if (state.selectedSeatIds.has(sid)) {
-                    state.selectedSeatIds.delete(sid);
-                    btn.classList.remove("selected");
-                } else {
-                    state.selectedSeatIds.add(sid);
-                    btn.classList.add("selected");
-                }
-                updateSeatSelectionLabel();
-            });
-            return btn;
-        }
-
-        function groupByRow(seats) {
-            const byRow = {};
-            seats.forEach(s => {
-                if (!byRow[s.row]) byRow[s.row] = [];
-                byRow[s.row].push(s);
-            });
-            return Object.keys(byRow).sort().map(row => byRow[row].sort((a, b) => Number(a.number) - Number(b.number)));
-        }
-
-        function seatsInZone(data, zoneName) {
-            const zone = (data.zones || []).find(z => z.name === zoneName);
-            if (!zone) return [];
-            const all = [];
-            zone.sections.forEach(sec => sec.seats.forEach(s => all.push(s)));
-            return all;
-        }
-
-        function renderRows(container, rows, centered) {
-            rows.forEach(rowSeats => {
-                const rowEl = document.createElement("div");
-                rowEl.className = "seat-row" + (centered ? " center" : "");
-                rowSeats.forEach(seat => rowEl.appendChild(createSeatBtn(seat)));
-                container.appendChild(rowEl);
-            });
-        }
-
-        function renderTeatrShahrSeatmap(data, el) {
-            const leftRows = groupByRow(seatsInZone(data, "Left Block"));
-            const rightRows = groupByRow(seatsInZone(data, "Right Block"));
-            const vipLeftRows = groupByRow(seatsInZone(data, "VIP Left"));
-            const vipRightRows = groupByRow(seatsInZone(data, "VIP Right"));
-
-            el.innerHTML = `<div class="teatr-map">
-                <div class="teatr-top">
-                    <div class="teatr-box exit">Exit 1</div>
-                    <div class="teatr-box toilet">Toilets</div>
-                    <div class="teatr-box exit">Exit 2</div>
-                </div>
-                <div class="teatr-main">
-                    <div class="teatr-side">
-                        <h5>East</h5>
-                        <div id="left-main"></div>
-                    </div>
-                    <div class="teatr-center">
-                        <div class="teatr-center-grid">
-                            <div class="teatr-drinks">Drinks</div>
-                            <div class="teatr-standing">General Admission - Standing</div>
-                            <div class="teatr-drinks">Drinks</div>
-                        </div>
-                        <div class="teatr-fanpit">Fan Pit</div>
-                        <div class="teatr-stage">Stage</div>
-                    </div>
-                    <div class="teatr-side">
-                        <h5>West</h5>
-                        <div id="right-main"></div>
-                    </div>
-                </div>
-                <div class="teatr-vip-row">
-                    <div class="teatr-side">
-                        <div class="vip-label">VIP Area</div>
-                        <div id="left-vip"></div>
-                    </div>
-                    <div></div>
-                    <div class="teatr-side">
-                        <div class="vip-label">VIP Area</div>
-                        <div id="right-vip"></div>
-                    </div>
-                </div>
-            </div>`;
-
-            renderRows(el.querySelector("#left-main"), leftRows, true);
-            renderRows(el.querySelector("#right-main"), rightRows, true);
-            renderRows(el.querySelector("#left-vip"), vipLeftRows, true);
-            renderRows(el.querySelector("#right-vip"), vipRightRows, true);
-        }
-
-        function updateSeatSelectionLabel() {
-            document.getElementById("seat-selection").textContent = state.selectedSeatIds.size + " selected" + (state.reservationId ? (" | reservation #" + state.reservationId) : "");
-        }
-
-        function setReservationMessage(text, ok) {
-            const el = document.getElementById("reservation-msg");
-            el.className = "msg " + (ok ? "ok" : "err");
-            el.textContent = text;
-        }
-
-        function onSeatEventSelect() {
-            const id = document.getElementById("seat-event").value;
-            state.seatEventId = id ? Number(id) : null;
-            const mapEl = document.getElementById("seatmap");
-            if (!state.seatEventId) {
-                mapEl.textContent = "Select a reserved-seating event";
-                document.getElementById("seatmap-hall").textContent = "";
-                return;
-            }
-            mapEl.textContent = "Loading seat map...";
-            getSeatmap(state.seatEventId).then(({ ok, data }) => {
-                if (!ok) {
-                    mapEl.textContent = data.error || "Failed to load seat map.";
-                    return;
-                }
-                renderSeatmap(data);
-            }).catch(() => {
-                mapEl.textContent = "Failed to load seat map.";
-            });
-        }
-
-        document.getElementById("refresh-seatmap").addEventListener("click", onSeatEventSelect);
-
-        document.getElementById("reserve-btn").addEventListener("click", () => {
-            if (!state.seatEventId) {
-                setReservationMessage("Select a reserved event first.", false);
-                return;
-            }
-            const seatIds = Array.from(state.selectedSeatIds);
-            if (!seatIds.length) {
-                setReservationMessage("Select at least one available seat.", false);
-                return;
-            }
-            const key = "res-" + crypto.randomUUID();
-            reserveSeats(state.seatEventId, seatIds, key).then(({ ok, status, data }) => {
-                if (!ok) {
-                    setReservationMessage(data.error || ("Error " + status), false);
-                    return;
-                }
-                state.reservationId = data.reservation_id;
-                updateSeatSelectionLabel();
-                setReservationMessage("Reserved successfully until " + data.reserved_until, true);
-                onSeatEventSelect();
-            }).catch(() => setReservationMessage("Reserve request failed.", false));
+    function filterEvents() {
+      const now = new Date();
+      let arr = [...allEvents];
+      if (state.type) arr = arr.filter(e => e.event_type === state.type);
+      if (state.city) arr = arr.filter(e => e.city === state.city);
+      if (state.availableOnly) {
+        arr = arr.filter(e => {
+          const ns = e.nearest_session || {};
+          return !ns.is_past && !ns.is_full && (ns.available ?? e.available) > 0;
         });
-
-        document.getElementById("confirm-btn").addEventListener("click", () => {
-            if (!state.seatEventId) {
-                setReservationMessage("Select a reserved event first.", false);
-                return;
-            }
-            if (!state.reservationId) {
-                setReservationMessage("Reserve seats first.", false);
-                return;
-            }
-            const key = "cnf-" + crypto.randomUUID();
-            confirmReservation(state.seatEventId, state.reservationId, key).then(({ ok, status, data }) => {
-                if (!ok) {
-                    setReservationMessage(data.error || ("Error " + status), false);
-                    return;
-                }
-                if (data.payment_url) {
-                    window.open(data.payment_url, "_blank");
-                }
-                setReservationMessage("Order #" + data.order_id + " created. Complete payment in fake gateway.", true);
-                state.reservationId = null;
-                state.selectedSeatIds = new Set();
-                updateSeatSelectionLabel();
-                onSeatEventSelect();
-                loadEvents();
-            }).catch(() => setReservationMessage("Confirm request failed.", false));
+      }
+      if (state.date === "today") {
+        arr = arr.filter(e => isToday(sessionDate(e), now));
+      } else if (state.date === "tomorrow") {
+        arr = arr.filter(e => isTomorrow(sessionDate(e), now));
+      } else if (state.date === "week") {
+        arr = arr.filter(e => isThisWeek(sessionDate(e), now));
+      }
+      if (state.q) {
+        const q = state.q.toLowerCase();
+        arr = arr.filter(e =>
+          (e.title || "").toLowerCase().includes(q) ||
+          (e.venue_name || "").toLowerCase().includes(q) ||
+          (e.city || "").toLowerCase().includes(q) ||
+          (e.genre || "").toLowerCase().includes(q)
+        );
+      }
+      if (state.sort === "nearest") {
+        arr.sort((a, b) => {
+          const da = sessionDate(a), db = sessionDate(b);
+          if (!da && !db) return 0;
+          if (!da) return 1;
+          if (!db) return -1;
+          return da - db;
         });
+      } else if (state.sort === "newest") {
+        arr.sort((a, b) => new Date(b.starts_at || 0) - new Date(a.starts_at || 0));
+      } else if (state.sort === "rating") {
+        arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      } else if (state.sort === "price") {
+        arr.sort((a, b) => (a.min_price ?? 1e15) - (b.min_price ?? 1e15));
+      }
+      return arr;
+    }
 
-        document.getElementById("order-form").addEventListener("submit", function(e) {
-            e.preventDefault();
-            const eventId = document.getElementById("order-event").value;
-            const qty = parseInt(document.getElementById("order-qty").value, 10);
-            const msgEl = document.getElementById("order-msg");
-            const btn = document.getElementById("order-btn");
-            if (!eventId || qty < 1) return;
-            btn.disabled = true;
-            const idem = "ui-" + crypto.randomUUID();
-            placeOrder(eventId, qty, idem).then(({ ok, status, data }) => {
-                btn.disabled = false;
-                msgEl.className = "msg " + (ok ? "ok" : "err");
-                if (ok) {
-                    msgEl.textContent = data.message || ("Order #" + data.order_id + " " + (data.status || ""));
-                    loadEvents().then(onEventSelect);
-                } else {
-                    msgEl.textContent = data.error || ("Error " + status);
-                }
-            }).catch(() => {
-                btn.disabled = false;
-                msgEl.className = "msg err";
-                msgEl.textContent = "Request failed.";
-            });
-        });
+    function renderLists() {
+      const filtered = filterEvents();
+      const now = new Date();
+      const soon = filtered.filter(e => {
+        const d = sessionDate(e);
+        const ns = e.nearest_session || {};
+        return d && d >= now && (isToday(d, now) || isTomorrow(d, now)) && !ns.is_past;
+      }).slice(0, 12);
 
-        function loadEvents() {
-            return getEvents().then(events => {
-                state.events = events;
-                renderEvents(events);
-                fillEventSelects(events);
-            }).catch(() => {
-                document.getElementById("events-list").textContent = "Failed to load events.";
-            });
-        }
+      const soonEl = document.getElementById("soon-row");
+      const gridEl = document.getElementById("all-grid");
 
-        function handlePaymentRedirectState() {
-            const params = new URLSearchParams(window.location.search);
-            const paid = params.get("paid");
-            const eventId = params.get("event_id");
-            if (paid !== "1" || !eventId) return;
+      soonEl.innerHTML = soon.length ? soon.map(e => cardHtml(e, true)).join("") : '<p class="empty">سانسی برای امشب/فردا یافت نشد.</p>';
+      gridEl.innerHTML = filtered.length ? filtered.map(e => cardHtml(e)).join("") : '<p class="empty">موردی یافت نشد.</p>';
+      document.getElementById("all-count").textContent = filtered.length + " اجرا";
 
-            const seatSelect = document.getElementById("seat-event");
-            const hasOption = Array.from(seatSelect.options).some(o => o.value === String(eventId));
-            if (!hasOption) return;
+      setupHero(filtered.filter(e => e.is_featured).length ? filtered.filter(e => e.is_featured) : filtered.slice(0, 5));
+    }
 
-            seatSelect.value = String(eventId);
-            state.seatEventId = Number(eventId);
-            onSeatEventSelect();
-            setReservationMessage("Payment successful. Seats are now sold.", true);
-            const cleanUrl = window.location.pathname;
-            window.history.replaceState({}, "", cleanUrl);
-        }
+    function setupHero(items) {
+      const hero = document.getElementById("hero");
+      heroItems = items;
+      if (!items.length) { hero.hidden = true; return; }
+      hero.hidden = false;
+      heroIndex = 0;
+      const dots = document.getElementById("hero-dots");
+      dots.innerHTML = items.map((_, i) =>
+        `<button type="button" class="hero-dot${i === 0 ? " active" : ""}" data-i="${i}" aria-label="اسلاید ${i+1}"></button>`
+      ).join("");
+      dots.querySelectorAll(".hero-dot").forEach(btn => {
+        btn.addEventListener("click", () => { heroIndex = Number(btn.dataset.i); showHeroSlide(); resetHeroTimer(); });
+      });
+      document.getElementById("hero-prev").hidden = items.length < 2;
+      document.getElementById("hero-next").hidden = items.length < 2;
+      showHeroSlide();
+      resetHeroTimer();
+    }
 
-        loadEvents().then(() => {
-            handlePaymentRedirectState();
-        });
-    </script>
+    function showHeroSlide() {
+      const e = heroItems[heroIndex];
+      if (!e) return;
+      setHeroWallpaper(e);
+      document.getElementById("hero-type").textContent = TYPE_LABELS[e.event_type] || "رویداد";
+      document.getElementById("hero-title").textContent = e.title;
+
+      const ratingEl = document.getElementById("hero-rating");
+      if (e.rating > 0) {
+        ratingEl.innerHTML = `<span class="star">★</span><strong>${e.rating.toFixed(1)}</strong><span class="muted">(${Number(e.rating_count || 0).toLocaleString("fa-IR")} نظر)</span>`;
+        ratingEl.hidden = false;
+      } else {
+        ratingEl.hidden = true;
+      }
+
+      const venueLine = [e.venue_name, e.hall_name].filter(Boolean).join(" — ");
+      const locLine = [e.city, e.area].filter(Boolean).join("، ");
+      document.getElementById("hero-details").innerHTML = [
+        `<li><span class="ico">📅</span><span>${heroSessionDate(e)}</span></li>`,
+        heroSessionTime(e) ? `<li><span class="ico">🕐</span><span>ساعت ${heroSessionTime(e)}</span></li>` : "",
+        venueLine || locLine ? `<li><span class="ico">📍</span><span>${[venueLine, locLine].filter(Boolean).join(" · ")}</span></li>` : "",
+      ].filter(Boolean).join("");
+
+      const desc = (e.description || "").trim();
+      const descEl = document.getElementById("hero-desc");
+      descEl.textContent = desc;
+      descEl.hidden = !desc;
+
+      const soldOut = heroSoldOut(e);
+      const soldBadge = document.getElementById("hero-soldout");
+      soldBadge.hidden = !soldOut;
+
+      const link = document.getElementById("hero-link");
+      link.href = "/theaters/" + e.id + "/";
+      link.textContent = soldOut ? "تمام شد" : "خرید بلیت";
+      link.classList.toggle("disabled", soldOut);
+
+      document.querySelectorAll(".hero-dot").forEach((d, i) => d.classList.toggle("active", i === heroIndex));
+    }
+
+    function resetHeroTimer() {
+      if (heroTimer) clearInterval(heroTimer);
+      if (heroItems.length < 2) return;
+      heroTimer = setInterval(() => {
+        heroIndex = (heroIndex + 1) % heroItems.length;
+        showHeroSlide();
+      }, 6000);
+    }
+
+    async function load() {
+      const r = await fetch(API + "/events/");
+      allEvents = await r.json();
+      const cities = Array.from(new Set(allEvents.map(e => e.city).filter(Boolean))).sort();
+      const citySel = document.getElementById("city-filter");
+      cities.forEach(c => {
+        const o = document.createElement("option");
+        o.value = c; o.textContent = c;
+        citySel.appendChild(o);
+      });
+      renderLists();
+    }
+
+    document.getElementById("type-tabs").addEventListener("click", ev => {
+      const btn = ev.target.closest(".tab");
+      if (!btn) return;
+      document.querySelectorAll("#type-tabs .tab").forEach(t => t.classList.toggle("active", t === btn));
+      state.type = btn.dataset.type;
+      renderLists();
+    });
+    document.getElementById("date-chips").addEventListener("click", ev => {
+      const btn = ev.target.closest(".chip");
+      if (!btn) return;
+      document.querySelectorAll("#date-chips .chip").forEach(c => c.classList.toggle("active", c === btn));
+      state.date = btn.dataset.date;
+      renderLists();
+    });
+    document.getElementById("city-filter").addEventListener("change", e => { state.city = e.target.value; renderLists(); });
+    document.getElementById("sort-filter").addEventListener("change", e => { state.sort = e.target.value; renderLists(); });
+    document.getElementById("available-only").addEventListener("change", e => { state.availableOnly = e.target.checked; renderLists(); });
+    document.getElementById("search-input").addEventListener("input", e => { state.q = e.target.value.trim(); renderLists(); });
+
+    document.getElementById("hero-prev").addEventListener("click", () => {
+      if (heroItems.length < 2) return;
+      heroIndex = (heroIndex - 1 + heroItems.length) % heroItems.length;
+      showHeroSlide();
+      resetHeroTimer();
+    });
+    document.getElementById("hero-next").addEventListener("click", () => {
+      if (heroItems.length < 2) return;
+      heroIndex = (heroIndex + 1) % heroItems.length;
+      showHeroSlide();
+      resetHeroTimer();
+    });
+
+    load();
+  </script>
 </body>
 </html>

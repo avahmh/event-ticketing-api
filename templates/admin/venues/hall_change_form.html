@@ -1,0 +1,6 @@
+{% extends "admin/change_form.html" %}
+{% block extrahead %}{{ block.super }}
+{% if bootstrap_layout_json %}
+<script type="application/json" id="hall-layout-bootstrap">{{ bootstrap_layout_json|safe }}</script>
+{% endif %}
+{% endblock %}

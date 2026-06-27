@@ -41,6 +41,8 @@ Django API for event ticketing with **general admission** (inventory-based) and 
 
    Edit `.env` and set a strong `POSTGRES_PASSWORD` (and any other values you need).
 
+   No need to copy `Dockerfile` — Compose uses `Dockerfile.example` directly.
+
 2. For **VS Code debugging** (debugpy on ports `5678` / `5679`), use the debug example instead:
 
    ```bash
@@ -97,6 +99,21 @@ See **`.env.example`**. Common keys:
 | `PROCESS_OUTBOX_INTERVAL_SECONDS` | How often Beat enqueues outbox processing |
 | `SEAT_LOCK_TTL_SECONDS` | Redis lock TTL for seat holds (prevents lock leaks on crash) |
 | `REDIS_LOCK_URL` | Redis URL for locking (defaults to `CELERY_BROKER_URL`) |
+| `DEBUG` | `True` locally (default); `False` in production |
+| `SECRET_KEY` | Django secret; dev default in `.env.example`, must change in production |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated hosts (domain + IP on VPS) |
+| `CSRF_TRUSTED_ORIGINS` | HTTPS origins for production (e.g. `https://your-domain.com`) |
+
+## Production deploy (Arvan VPS)
+
+See **`deploy/DEPLOY.md`** for step-by-step instructions. Summary:
+
+```bash
+cp deploy/.env.production.example .env   # on the server
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Local dev is unchanged — keep using `docker-compose.example.yml` and `DEBUG=True`.
 
 ## Redis locking notes (reserved seating)
 

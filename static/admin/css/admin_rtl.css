@@ -1,0 +1,441 @@
+#header {
+  direction: rtl;
+  text-align: right;
+}
+
+#branding h1,
+#branding h1 a:link,
+#branding h1 a:visited {
+  font-weight: 600;
+}
+
+#user-tools {
+  left: 0;
+  right: auto;
+  text-align: left;
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+  text-align: right;
+}
+
+#content {
+  direction: rtl;
+  text-align: right;
+}
+
+#content-main {
+  float: right;
+}
+
+#nav-sidebar {
+  border-left: 1px solid var(--hairline-color, #e8e8e8);
+  border-right: none;
+}
+
+.submit-row {
+  text-align: left;
+}
+
+.submit-row input {
+  float: left;
+}
+
+.aligned label {
+  float: right;
+  padding-left: 0.5rem;
+  padding-right: 0;
+}
+
+/* فقط فرم‌های معمولی — نه سلول‌های جدول inline */
+.aligned .form-row input,
+.aligned .form-row select,
+.aligned .form-row textarea {
+  float: right;
+}
+
+.change-form .inline-group .tabular input,
+.change-form .inline-group .tabular select,
+.change-form .inline-group .tabular textarea,
+.change-form .inline-related.tabular input,
+.change-form .inline-related.tabular select,
+.change-form .inline-related.tabular textarea {
+  float: none !important;
+}
+
+.help,
+p.help {
+  clear: both;
+  text-align: right;
+}
+
+fieldset .field-box {
+  float: right;
+}
+
+.object-tools {
+  float: left;
+}
+
+.object-tools a {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+.change-list .filtered {
+  min-height: 400px;
+}
+
+#changelist-filter {
+  left: 0;
+  right: auto;
+  border-left: none;
+  border-right: 1px solid var(--hairline-color, #e8e8e8);
+}
+
+#changelist-search > div {
+  flex-direction: row-reverse;
+}
+
+thead th,
+tbody td {
+  text-align: right;
+}
+
+.inline-related h3 {
+  text-align: right;
+}
+
+.inline-related .add-row a {
+  float: right;
+}
+
+.selector-available,
+.selector-chosen {
+  text-align: right;
+}
+
+body {
+  font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+}
+
+/* ── چیدمان فرم تغییر: ابزارها بالا، تب‌ها پایین‌تر ── */
+.change-form #content,
+.change-form #content-main {
+  float: none !important;
+  width: 100% !important;
+  max-width: 100%;
+}
+
+.change-form .breadcrumbs {
+  display: block;
+  width: 100%;
+  clear: both;
+  margin-bottom: 0.75rem;
+}
+
+.change-form .object-tools {
+  float: none !important;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  width: 100%;
+  clear: both;
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--hairline-color, #e0e0e0);
+}
+
+.change-form .object-tools li {
+  float: none;
+}
+
+/* Django 5+ تب‌های fieldset */
+.change-form nav[role="tablist"],
+.change-form .nav-tabs,
+.change-form ul.changeform-tabs,
+.change-form .changeform-tabs {
+  display: flex !important;
+  flex-wrap: wrap;
+  width: 100% !important;
+  clear: both !important;
+  float: none !important;
+  margin: 0.5rem 0 1rem !important;
+  padding-top: 0.25rem;
+  border-top: none;
+  position: relative;
+  z-index: 1;
+}
+
+.change-form fieldset.module {
+  clear: both;
+  width: 100%;
+}
+
+.change-form .inline-group {
+  clear: both;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.change-form .inline-group h2 {
+  margin-top: 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--hairline-color, #e0e0e0);
+}
+
+.change-form .submit-row {
+  clear: both;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* ── فرم رویداد: تب‌ها بالا، محتوا در باکس کامل ── */
+.model-event.change-form #content,
+.model-event.change-form #content-main,
+.model-event.change-form #content.colM {
+  overflow: visible !important;
+  min-height: 0;
+}
+
+.model-event.change-form #content-main > form > .event-admin-shell,
+.model-event.change-form #content-main > form > div.event-admin-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: calc(100vh - 220px);
+  box-sizing: border-box;
+}
+
+.model-event.change-form .changeform-tabs,
+.model-event.change-form .event-admin-tabs {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0 0 0.85rem !important;
+  padding: 0.5rem 0.65rem !important;
+  order: 0;
+  flex-shrink: 0;
+  clear: both;
+  width: 100%;
+  float: none;
+  background: #f3f4f6;
+  border: 1px solid var(--hairline-color, #d8d8d8);
+  border-radius: 8px;
+  box-sizing: border-box;
+  position: static;
+  z-index: 1;
+}
+
+.model-event.change-form .event-tab-panel {
+  display: none;
+  width: 100%;
+  clear: both;
+  flex: 1 1 auto;
+  background: #fff;
+  border: 1px solid var(--hairline-color, #e0e0e0);
+  border-radius: 8px;
+  padding: 0.75rem 1rem 1rem;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.model-event.change-form .event-tab-panel.selected {
+  display: block !important;
+  min-height: calc(100vh - 320px);
+}
+
+.model-event.change-form .event-tab-panel.event-tab-images .description {
+  margin-bottom: 0.75rem;
+  color: #666;
+}
+
+.model-event.change-form .event-tab-panel.event-tab-images .form-row {
+  clear: both;
+  overflow: visible;
+  padding: 8px 0;
+}
+
+.model-event.change-form .event-tab-panel.event-tab-images .flex-container.form-multiline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.model-event.change-form .event-tab-panel.event-tab-images .field-poster_preview .readonly,
+.model-event.change-form .event-tab-panel.event-tab-images .field-wallpaper_preview .readonly {
+  margin-top: 0.35rem;
+}
+
+.model-event.change-form .event-tab-panel.event-tab-images .readonly img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.model-event.change-form .event-images-top {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.model-event.change-form #content-main > form > div > .module.initialized,
+.model-event.change-form #content-main > form > div > .inline-group.initialized {
+  display: none !important;
+}
+
+.model-event.change-form #content-main > form > div > .module.initialized.selected,
+.model-event.change-form #content-main > form > div > .inline-group.initialized.selected {
+  display: block !important;
+}
+
+.model-event.change-form .submit-row {
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--hairline-color, #e0e0e0);
+}
+
+.model-event.change-form .changeform-tabs-item {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.model-event.change-form .changeform-tabs-item a,
+.model-event.change-form .changeform-tabs-item a:visited,
+.model-event.change-form .changeform-tabs-item a:hover {
+  display: inline-block;
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4b5563;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.model-event.change-form .changeform-tabs-item.selected a,
+.model-event.change-form .changeform-tabs-item.selected a:hover {
+  color: #fff;
+  background: #991b1b;
+  border-color: #7f1d1d;
+}
+
+.model-event.change-form .event-tab-panel.inline-group.selected {
+  min-height: calc(100vh - 320px);
+}
+
+.model-event.change-form .event-tab-panel.inline-group {
+  padding: 0;
+  overflow: visible;
+}
+
+.model-event.change-form .event-tab-panel.inline-group .tabular {
+  margin: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.model-event.change-form .event-tab-panel.inline-group .tabular table {
+  width: 100%;
+  min-width: 52rem;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+.model-event.change-form .event-tab-panel.inline-group .tabular th,
+.model-event.change-form .event-tab-panel.inline-group .tabular td {
+  float: none !important;
+  vertical-align: middle;
+  padding: 0.5rem 0.65rem;
+  white-space: nowrap;
+}
+
+.model-event.change-form .event-tab-panel.inline-group .tabular td input,
+.model-event.change-form .event-tab-panel.inline-group .tabular td select {
+  float: none !important;
+  display: inline-block;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.model-event.change-form .event-tab-panel.inline-group .tabular .vDateField,
+.model-event.change-form .event-tab-panel.inline-group .tabular .vTimeField {
+  float: none !important;
+  width: auto !important;
+  min-width: 6.5em;
+  vertical-align: middle;
+}
+
+.model-event.change-form .event-tab-panel.inline-group .tabular .vDateField-link {
+  float: none !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.model-event.change-form .event-tab-panel.inline-group .tabular p.datetime {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  white-space: normal;
+}
+
+.model-event.change-form .event-tab-panel.inline-group .tabular p.datetime br {
+  display: none;
+}
+
+.model-event.change-form .changeform-navigation {
+  clear: both;
+  float: none;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .model-event.change-form .event-tab-panel.event-tab-images .flex-container.form-multiline {
+    grid-template-columns: 1fr;
+  }
+
+  .model-event.change-form .event-tab-panel.selected,
+  .model-event.change-form .event-tab-panel.inline-group.selected {
+    min-height: 50vh;
+  }
+}
+
+/* Jet dashboard overlap fix */
+#content.colM {
+  overflow: visible;
+}
+
+form .aligned .form-row {
+  clear: both;
+  overflow: hidden;
+}
+
+/* جدول سانس/نظرات: overflow روی form-row باعث روی هم افتادن می‌شود */
+.change-form .inline-group .tabular td,
+.change-form .inline-group .tabular th,
+.change-form .inline-related.tabular td,
+.change-form .inline-related.tabular th {
+  overflow: visible;
+}
+
+.change-form .inline-group .tabular {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.change-form .inline-group .tabular table {
+  min-width: 48rem;
+}

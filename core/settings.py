@@ -14,6 +14,8 @@ from pathlib import Path
 import os
 import structlog
 
+import jet
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,17 +24,32 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-v(ka-0x(eo68tsrh*tv7%mh0mplma&-()o@5p!tlj^cp)0#z1u'
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "django-insecure-dev-only-change-me-in-production",
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Dev default True; set DEBUG=False in production .env
+DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = ["127.0.0.1"]
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if h.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    h.strip()
+    for h in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if h.strip()
+]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'jet.dashboard',
+    'jet',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,7 +64,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -133,19 +152,41 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fa'
 
-TIME_ZONE = 'UTC'
+LANGUAGES = [
+    ('fa', 'فارسی'),
+]
+
+TIME_ZONE = 'Asia/Tehran'
 
 USE_I18N = True
 
 USE_TZ = True
+
+_jet_root = Path(jet.__file__).resolve().parent
+LOCALE_PATHS = [
+    str(_jet_root / "locale"),
+    str(_jet_root / "dashboard" / "locale"),
+    BASE_DIR / "locale",
+]
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+JET_DEFAULT_THEME = "default"
+JET_THEMES = [
+    {"theme": "default", "color": "#47bac1", "title": "پیش‌فرض"},
+    {"theme": "green", "color": "#44b78b", "title": "سبز"},
+    {"theme": "light-gray", "color": "#222", "title": "خاکستری روشن"},
+]
 
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
@@ -163,3 +204,11 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": float(os.environ.get("PROCESS_OUTBOX_INTERVAL_SECONDS", "30")),
     },
 }
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+WHITENOISE_USE_FINDERS = DEBUG
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True

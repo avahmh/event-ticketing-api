@@ -79,9 +79,12 @@ def finalize_payment(*, authority: str, provider: str, success: bool) -> dict:
                 reservation.status = Reservation.STATUS_CONFIRMED
                 reservation.save(update_fields=["status"])
 
-            for item in order.items.select_related("seat").all():
-                if item.seat_id:
-                    item.seat.event_seats.filter(event=order.event).update(status=EventSeat.STATUS_SOLD)
+            if not order.session_id:
+                for item in order.items.select_related("seat").all():
+                    if item.seat_id:
+                        item.seat.event_seats.filter(event=order.event).update(
+                            status=EventSeat.STATUS_SOLD
+                        )
 
             payment.status = Payment.STATUS_SUCCEEDED
             payment.save(update_fields=["status"])
@@ -108,12 +111,13 @@ def finalize_payment(*, authority: str, provider: str, success: bool) -> dict:
         order.status = Order.STATUS_CANCELLED
         order.save(update_fields=["status"])
 
-        for item in order.items.select_related("seat").all():
-            if item.seat_id:
-                EventSeat.objects.filter(
-                    event=order.event,
-                    seat=item.seat,
-                ).update(status=EventSeat.STATUS_AVAILABLE)
+        if not order.session_id:
+            for item in order.items.select_related("seat").all():
+                if item.seat_id:
+                    EventSeat.objects.filter(
+                        event=order.event,
+                        seat=item.seat,
+                    ).update(status=EventSeat.STATUS_AVAILABLE)
 
         if reservation:
             reservation.status = Reservation.STATUS_CANCELLED

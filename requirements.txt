@@ -1,7 +1,13 @@
+--extra-index-url https://test.pypi.org/simple/
 Django>=5.0
+Pillow>=10.0
+django-jet-fa==1.1.28
+#django-jet-fa @ https://github.com/avaaflow/django-jet-fa/archive/refs/heads/main.tar.gz
 psycopg2-binary>=2.9
 structlog>=24.0
 celery[redis]>=5.3
 redis>=5.0
+gunicorn>=22.0
+whitenoise>=6.6
 locust>=2.0
 debugpy==1.8.20
