@@ -879,16 +879,27 @@
     }
 
     async function load() {
-      const r = await fetch(API + "/events/");
-      allEvents = await r.json();
-      const cities = Array.from(new Set(allEvents.map(e => e.city).filter(Boolean))).sort();
-      const citySel = document.getElementById("city-filter");
-      cities.forEach(c => {
-        const o = document.createElement("option");
-        o.value = c; o.textContent = c;
-        citySel.appendChild(o);
-      });
-      renderLists();
+      const soonEl = document.getElementById("soon-row");
+      const gridEl = document.getElementById("all-grid");
+      try {
+        const r = await fetch(API + "/events/");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        allEvents = await r.json();
+        if (!Array.isArray(allEvents)) throw new Error("bad response");
+        const cities = Array.from(new Set(allEvents.map(e => e.city).filter(Boolean))).sort();
+        const citySel = document.getElementById("city-filter");
+        cities.forEach(c => {
+          const o = document.createElement("option");
+          o.value = c; o.textContent = c;
+          citySel.appendChild(o);
+        });
+        renderLists();
+      } catch (err) {
+        const msg = '<p class="empty">خطا در بارگذاری داده‌ها. چند ثانیه بعد دوباره تلاش کنید.</p>';
+        soonEl.innerHTML = msg;
+        gridEl.innerHTML = msg;
+        console.error("load events failed", err);
+      }
     }
 
     document.getElementById("type-tabs").addEventListener("click", ev => {

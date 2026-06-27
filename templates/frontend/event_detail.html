@@ -518,9 +518,17 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script>
+    function clientId() {
+      if (window.crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+    }
+
     const EVENT_ID = Number("{{ event_id }}");
     const API = "";
-    const USER_KEY = localStorage.getItem("cinema_kade_user") || ("u-" + crypto.randomUUID());
+    const USER_KEY = localStorage.getItem("cinema_kade_user") || ("u-" + clientId());
     localStorage.setItem("cinema_kade_user", USER_KEY);
     const state = {
       step: 1,
@@ -846,13 +854,19 @@
     }
 
     async function loadComments() {
-      const r = await fetch(API + `/events/${EVENT_ID}/comments/`);
-      const data = await r.json();
-      if (!r.ok) {
-        document.getElementById("comment-list").innerHTML = '<p class="comment-empty">خطا در بارگذاری نظرات</p>';
-        return;
+      const el = document.getElementById("comment-list");
+      try {
+        const r = await fetch(API + `/events/${EVENT_ID}/comments/`);
+        const data = await r.json();
+        if (!r.ok) {
+          el.innerHTML = '<p class="comment-empty">خطا در بارگذاری نظرات</p>';
+          return;
+        }
+        renderComments(data.comments || []);
+      } catch (err) {
+        el.innerHTML = '<p class="comment-empty">خطا در بارگذاری نظرات</p>';
+        console.error("loadComments failed", err);
       }
-      renderComments(data.comments || []);
     }
 
     async function submitComment(ev) {
@@ -921,38 +935,44 @@
     }
 
     async function loadSessions() {
-      const r = await fetch(API + `/events/${EVENT_ID}/sessions/`);
-      const data = await r.json();
-      if (!r.ok) { document.getElementById("sessions-list").textContent = data.error || "خطا"; return; }
-      state.event = data.event;
-      state.sessions = data.sessions || [];
-      document.title = (data.event.title || "خرید بلیت") + " — سینما کده";
-      document.getElementById("sb-title").textContent = data.event.title;
-      const times = state.sessions.map(s => faTime(s.starts_at)).filter((v, i, a) => a.indexOf(v) === i).join(" و ");
-      const days = state.sessions.length ? faDay(state.sessions[0].starts_at) : faDay(data.event.starts_at);
-      document.getElementById("sb-schedule").textContent = times ? `${days}\nساعت ${times}` : faDate(data.event.starts_at);
-      const descEl = document.getElementById("sb-description");
-      const desc = (data.event.description || "").trim();
-      if (desc) {
-        descEl.textContent = desc;
-        descEl.classList.remove("hidden");
-      } else {
-        descEl.textContent = "";
-        descEl.classList.add("hidden");
-      }
-      setupVenueMap(data.event);
-      document.getElementById("sb-notes").innerHTML = (data.event.purchase_notes || []).map(n => `<li>${n}</li>`).join("");
-      setEventImages(data.event);
-      renderSessions();
-      if (!state.activeSession && state.sessions.length) {
-        const first = state.sessions.find(s => !s.is_full) || state.sessions[0];
-        selectSession(first.id);
+      const root = document.getElementById("sessions-list");
+      try {
+        const r = await fetch(API + `/events/${EVENT_ID}/sessions/`);
+        const data = await r.json();
+        if (!r.ok) { root.textContent = data.error || "خطا"; return; }
+        state.event = data.event;
+        state.sessions = data.sessions || [];
+        document.title = (data.event.title || "خرید بلیت") + " — سینما کده";
+        document.getElementById("sb-title").textContent = data.event.title;
+        const times = state.sessions.map(s => faTime(s.starts_at)).filter((v, i, a) => a.indexOf(v) === i).join(" و ");
+        const days = state.sessions.length ? faDay(state.sessions[0].starts_at) : faDay(data.event.starts_at);
+        document.getElementById("sb-schedule").textContent = times ? `${days}\nساعت ${times}` : faDate(data.event.starts_at);
+        const descEl = document.getElementById("sb-description");
+        const desc = (data.event.description || "").trim();
+        if (desc) {
+          descEl.textContent = desc;
+          descEl.classList.remove("hidden");
+        } else {
+          descEl.textContent = "";
+          descEl.classList.add("hidden");
+        }
+        setupVenueMap(data.event);
+        document.getElementById("sb-notes").innerHTML = (data.event.purchase_notes || []).map(n => `<li>${n}</li>`).join("");
+        setEventImages(data.event);
+        renderSessions();
+        if (!state.activeSession && state.sessions.length) {
+          const first = state.sessions.find(s => !s.is_full) || state.sessions[0];
+          selectSession(first.id);
+        }
+      } catch (err) {
+        root.textContent = "خطا در بارگذاری سانس‌ها";
+        console.error("loadSessions failed", err);
       }
     }
 
     async function reserve() {
       if (!state.selectedSeatIds.size || !state.activeSession) return;
-      const key = "res-" + crypto.randomUUID();
+      const key = "res-" + clientId();
       const r = await fetch(API + `/events/${EVENT_ID}/reservations/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": key },
@@ -968,7 +988,7 @@
 
     async function confirmReserve() {
       if (!state.reservationId) return;
-      const key = "cnf-" + crypto.randomUUID();
+      const key = "cnf-" + clientId();
       const r = await fetch(API + `/events/${EVENT_ID}/reservations/confirm/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": key },
