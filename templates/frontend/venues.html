@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>سینما کده — مکان‌های برگزاری</title>
+  <title>سینمامیکس — مکان‌های برگزاری</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <style>
@@ -37,7 +37,7 @@
       flex-wrap: wrap;
     }
     .brand { font-size: 1.35rem; font-weight: 700; }
-    .brand span { color: #d4a853; }
+    .brand span { color: #fbae20; }
     .nav a {
       color: rgba(255,255,255,0.9);
       font-size: 0.88rem;
@@ -92,17 +92,21 @@
       color: var(--primary);
       font-weight: 600;
     }
-    .empty { color: var(--muted); padding: 2rem 0; text-align: center; }
+    .empty { color: var(--muted); padding: 2rem 0; text-align: center; grid-column: 1 / -1; }
     .leaflet-container { font-family: inherit; }
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; gap: 0.65rem; }
+      .map-box { height: 180px; }
+    }
   </style>
 </head>
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="/">سینما <span>کده</span></a>
+      <a class="brand" href="/">سینما<span>میکس</span></a>
       <nav class="nav">
-        <a href="/">اجرها</a>
-        <a href="/venues/">مکان‌ها</a>
+        <a href="/">اجراها</a>
+        <a href="/venues/" class="active">مکان‌ها</a>
         <a href="/organizers/">برگزارکننده‌ها</a>
       </nav>
     </div>
@@ -116,6 +120,14 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script>
+    function escapeHtml(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
     function hasCoords(v) {
       return v.latitude != null && v.longitude != null;
     }
@@ -125,6 +137,7 @@
     }
 
     function initMap(elId, lat, lng, title) {
+      if (typeof L === "undefined") return;
       const map = L.map(elId, { scrollWheelZoom: false }).setView([lat, lng], 15);
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
@@ -134,18 +147,18 @@
       setTimeout(() => map.invalidateSize(), 100);
     }
 
-    function cardHtml(v, i) {
+    function cardHtml(v) {
       const loc = [v.city, v.area].filter(Boolean).join("، ");
-      const halls = (v.halls || []).map(h => `<span class="tag">${h.name}</span>`).join("");
+      const halls = (v.halls || []).map(h => `<span class="tag">${escapeHtml(h.name)}</span>`).join("");
       const mapBlock = hasCoords(v)
         ? `<div class="map-box" id="map-${v.id}"></div>`
         : `<div class="map-box no-map">موقعیت روی نقشه ثبت نشده<br><small>از ادمین مختصات را وارد کنید</small></div>`;
       return `<article class="card">
         ${mapBlock}
         <div class="body">
-          <h2 class="name">${v.name}</h2>
-          <p class="meta">${loc ? loc + "<br>" : ""}${v.address || ""}</p>
-          ${v.description ? `<p class="meta">${v.description}</p>` : ""}
+          <h2 class="name">${escapeHtml(v.name)}</h2>
+          <p class="meta">${loc ? escapeHtml(loc) + "<br>" : ""}${escapeHtml(v.address || "")}</p>
+          ${v.description ? `<p class="meta">${escapeHtml(v.description)}</p>` : ""}
           ${halls ? `<div class="tags">${halls}</div>` : ""}
           ${hasCoords(v) ? `<a class="map-link" href="${mapsUrl(v.latitude, v.longitude)}" target="_blank" rel="noopener">مسیریابی در نقشه</a>` : ""}
         </div>
@@ -153,17 +166,27 @@
     }
 
     async function load() {
-      const r = await fetch("/venues/venues/");
-      const data = await r.json();
       const el = document.getElementById("grid");
-      if (!data.length) {
-        el.innerHTML = '<p class="empty">مکانی ثبت نشده. از ادمین → مکان‌های برگزاری اضافه کنید.</p>';
-        return;
+      try {
+        const r = await fetch("/api/venues/");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = await r.json();
+        if (!Array.isArray(data)) throw new Error("bad response");
+        if (!data.length) {
+          el.innerHTML = '<p class="empty">مکانی ثبت نشده. از ادمین → مکان‌های برگزاری اضافه کنید.</p>';
+          return;
+        }
+        el.innerHTML = data.map(cardHtml).join("");
+        data.forEach(v => {
+          if (hasCoords(v)) {
+            try { initMap(`map-${v.id}`, v.latitude, v.longitude, v.name); }
+            catch (err) { console.error("map init failed", v.id, err); }
+          }
+        });
+      } catch (err) {
+        el.innerHTML = '<p class="empty">خطا در بارگذاری. صفحه را دوباره باز کنید.</p>';
+        console.error("load venues failed", err);
       }
-      el.innerHTML = data.map(cardHtml).join("");
-      data.forEach(v => {
-        if (hasCoords(v)) initMap(`map-${v.id}`, v.latitude, v.longitude, v.name);
-      });
     }
     load();
   </script>

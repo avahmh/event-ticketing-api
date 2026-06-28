@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>سینما کده — خرید بلیت</title>
+  <title>سینمامیکس — خرید بلیت</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <style>
@@ -943,7 +943,7 @@
         if (!r.ok) { root.textContent = data.error || "خطا"; return; }
         state.event = data.event;
         state.sessions = data.sessions || [];
-        document.title = (data.event.title || "خرید بلیت") + " — سینما کده";
+        document.title = (data.event.title || "خرید بلیت") + " — سینمامیکس";
         document.getElementById("sb-title").textContent = data.event.title;
         const times = state.sessions.map(s => faTime(s.starts_at)).filter((v, i, a) => a.indexOf(v) === i).join(" و ");
         const days = state.sessions.length ? faDay(state.sessions[0].starts_at) : faDay(data.event.starts_at);

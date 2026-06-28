@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>سینما کده — برگزارکننده‌ها</title>
+  <title>سینمامیکس — برگزارکننده‌ها</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -36,7 +36,7 @@
       flex-wrap: wrap;
     }
     .brand { font-size: 1.35rem; font-weight: 700; }
-    .brand span { color: #d4a853; }
+    .brand span { color: #fbae20; }
     .nav a {
       color: rgba(255,255,255,0.9);
       font-size: 0.88rem;
@@ -61,26 +61,28 @@
       flex-direction: column;
     }
     .logo-wrap {
-      height: 120px;
-      display: grid;
-      place-items: center;
+      aspect-ratio: 1 / 1;
+      position: relative;
       background: var(--primary-soft);
-      padding: 1rem;
+      overflow: hidden;
     }
     .logo-wrap img {
-      max-width: 100%;
-      max-height: 88px;
-      object-fit: contain;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
     }
     .logo-fallback {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      border-radius: 0;
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: #fff;
       display: grid;
       place-items: center;
-      font-size: 1.6rem;
+      font-size: clamp(2rem, 10vw, 3rem);
       font-weight: 700;
     }
     .body { padding: 0.85rem; flex: 1; display: flex; flex-direction: column; }
@@ -104,15 +106,19 @@
       padding: 0.15rem 0.5rem;
       font-size: 0.72rem;
     }
-    .empty { color: var(--muted); padding: 2rem 0; text-align: center; }
+    .empty { color: var(--muted); padding: 2rem 0; text-align: center; grid-column: 1 / -1; }
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+      .name { font-size: 0.88rem; }
+    }
   </style>
 </head>
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="/">سینما <span>کده</span></a>
+      <a class="brand" href="/">سینما<span>میکس</span></a>
       <nav class="nav">
-        <a href="/">اجرها</a>
+        <a href="/">اجراها</a>
         <a href="/venues/">مکان‌ها</a>
         <a href="/organizers/" class="active">برگزارکننده‌ها</a>
       </nav>
@@ -126,21 +132,33 @@
   </div>
 
   <script>
+    function escapeHtml(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
     function initial(name) {
       return (name || "?").trim().charAt(0) || "?";
     }
 
     function cardHtml(o) {
       const logo = o.logo_url
-        ? `<img src="${o.logo_url.replace(/'/g, "%27")}" alt="">`
-        : `<div class="logo-fallback">${initial(o.name)}</div>`;
-      const venues = (o.venues || []).map(v => `<span class="tag">${v.name}${v.city ? " · " + v.city : ""}</span>`).join("");
-      const halls = (o.halls || []).map(h => `<span class="tag">${h.venue_name ? h.venue_name + " / " : ""}${h.name}</span>`).join("");
+        ? `<img src="${escapeHtml(o.logo_url)}" alt="">`
+        : `<div class="logo-fallback">${escapeHtml(initial(o.name))}</div>`;
+      const venues = (o.venues || []).map(v =>
+        `<span class="tag">${escapeHtml(v.name)}${v.city ? " · " + escapeHtml(v.city) : ""}</span>`
+      ).join("");
+      const halls = (o.halls || []).map(h =>
+        `<span class="tag">${h.venue_name ? escapeHtml(h.venue_name) + " / " : ""}${escapeHtml(h.name)}</span>`
+      ).join("");
       return `<article class="card">
         <div class="logo-wrap">${logo}</div>
         <div class="body">
-          <h2 class="name">${o.name}</h2>
-          ${o.description ? `<p class="desc">${o.description}</p>` : ""}
+          <h2 class="name">${escapeHtml(o.name)}</h2>
+          ${o.description ? `<p class="desc">${escapeHtml(o.description)}</p>` : ""}
           ${venues ? `<p class="section-title">مکان‌های برگزاری</p><div class="tags">${venues}</div>` : ""}
           ${halls ? `<p class="section-title">سالن‌ها</p><div class="tags">${halls}</div>` : ""}
         </div>
@@ -148,12 +166,19 @@
     }
 
     async function load() {
-      const r = await fetch("/venues/organizers/");
-      const data = await r.json();
       const el = document.getElementById("grid");
-      el.innerHTML = data.length
-        ? data.map(cardHtml).join("")
-        : '<p class="empty">برگزارکننده‌ای ثبت نشده. از ادمین → برگزارکننده‌ها اضافه کنید.</p>';
+      try {
+        const r = await fetch("/api/organizers/");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = await r.json();
+        if (!Array.isArray(data)) throw new Error("bad response");
+        el.innerHTML = data.length
+          ? data.map(cardHtml).join("")
+          : '<p class="empty">برگزارکننده‌ای ثبت نشده. از ادمین → برگزارکننده‌ها اضافه کنید.</p>';
+      } catch (err) {
+        el.innerHTML = '<p class="empty">خطا در بارگذاری. صفحه را دوباره باز کنید.</p>';
+        console.error("load organizers failed", err);
+      }
     }
     load();
   </script>
